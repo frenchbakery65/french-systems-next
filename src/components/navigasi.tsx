@@ -1,27 +1,31 @@
 'use client';
 
+import {
+  Building2, CalendarCog, CalendarDays, CalendarOff, ChartColumn, Clock, FileUp, Fingerprint, House,
+  ScrollText, SlidersHorizontal, SquarePen, TreePalm, UserCog, Users, Wallet, type LucideIcon,
+} from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
 type Akses = 'semua' | 'kelola' | 'admin';
-const MENU: { grup?: string; href: string; label: string; akses?: Akses }[] = [
-  { href: '/', label: 'Hari ini' },
-  { href: '/jadwal-shift', label: 'Jadwal shift' },
-  { href: '/rekap', label: 'Rekap periode' },
-  { href: '/impor', label: 'Import file', akses: 'kelola' },
-  { grup: 'Penggajian', href: '/periode-gaji', label: 'Periode gaji', akses: 'kelola' },
-  { grup: 'Penggajian', href: '/pengaturan-gaji', label: 'Pengaturan gaji', akses: 'kelola' },
-  { grup: 'Data master', href: '/karyawan', label: 'Karyawan' },
-  { grup: 'Data master', href: '/departemen', label: 'Departemen' },
-  { grup: 'Data master', href: '/izin', label: 'Izin / sakit / cuti' },
-  { grup: 'Data master', href: '/koreksi', label: 'Koreksi absen' },
-  { grup: 'Data master', href: '/hari-libur', label: 'Hari libur' },
-  { grup: 'Data master', href: '/shift', label: 'Shift', akses: 'kelola' },
-  { grup: 'Data master', href: '/jadwal-umum', label: 'Pengaturan jadwal umum', akses: 'kelola' },
-  { grup: 'Sistem', href: '/mesin', label: 'Mesin & sinkron' },
-  { grup: 'Sistem', href: '/log-absen', label: 'Log absen (mentah)' },
-  { grup: 'Sistem', href: '/pengguna', label: 'Pengguna', akses: 'admin' },
+const MENU: { grup?: string; href: string; label: string; ikon: LucideIcon; akses?: Akses }[] = [
+  { href: '/', label: 'Hari ini', ikon: House },
+  { href: '/jadwal-shift', label: 'Jadwal shift', ikon: CalendarDays },
+  { href: '/rekap', label: 'Rekap periode', ikon: ChartColumn },
+  { href: '/impor', label: 'Import file', ikon: FileUp, akses: 'kelola' },
+  { grup: 'Penggajian', href: '/periode-gaji', label: 'Periode gaji', ikon: Wallet, akses: 'kelola' },
+  { grup: 'Penggajian', href: '/pengaturan-gaji', label: 'Pengaturan gaji', ikon: SlidersHorizontal, akses: 'kelola' },
+  { grup: 'Data master', href: '/karyawan', label: 'Karyawan', ikon: Users },
+  { grup: 'Data master', href: '/departemen', label: 'Departemen', ikon: Building2 },
+  { grup: 'Data master', href: '/izin', label: 'Izin / sakit / cuti', ikon: CalendarOff },
+  { grup: 'Data master', href: '/koreksi', label: 'Koreksi absen', ikon: SquarePen },
+  { grup: 'Data master', href: '/hari-libur', label: 'Hari libur', ikon: TreePalm },
+  { grup: 'Data master', href: '/shift', label: 'Shift', ikon: Clock, akses: 'kelola' },
+  { grup: 'Data master', href: '/jadwal-umum', label: 'Pengaturan jadwal umum', ikon: CalendarCog, akses: 'kelola' },
+  { grup: 'Sistem', href: '/mesin', label: 'Mesin & sinkron', ikon: Fingerprint },
+  { grup: 'Sistem', href: '/log-absen', label: 'Log absen (mentah)', ikon: ScrollText },
+  { grup: 'Sistem', href: '/pengguna', label: 'Pengguna', ikon: UserCog, akses: 'admin' },
 ];
 
 export function Navigasi({ merek, peran, children }: { merek: React.ReactNode; peran: string; children: React.ReactNode }) {
@@ -41,7 +45,9 @@ export function Navigasi({ merek, peran, children }: { merek: React.ReactNode; p
           return (
             <span key={m.href} style={{ display: 'contents' }}>
               {judul}
-              <Link href={m.href} aria-current={aktif(m.href) ? 'page' : undefined} onClick={() => setBuka(false)}>{m.label}</Link>
+              <Link href={m.href} aria-current={aktif(m.href) ? 'page' : undefined} onClick={() => setBuka(false)}>
+                <m.ikon className="app-nav-ikon" aria-hidden />{m.label}
+              </Link>
             </span>
           );
         })}
