@@ -76,4 +76,34 @@ describe('shift', () => {
     expect(w.hari(a, '2026-09-30').status).toBe('belum_mulai');
     expect(w.hari(b, '2026-09-30').status).toBe('belum_hadir');
   });
+
+  it('scan jauh sebelum jam masuk shift tidak dihitung tepat waktu', () => {
+    const a = k('SIANG');
+    scan(a, '2026-09-29', '00:26:00');
+    const h = w.hari(a, '2026-09-29');
+    expect([h.status, h.jamMasuk, h.scanDiabaikan]).toEqual(['alpa', null, ['00:26:00']]);
+    expect(h.catatan).toContain('Scan 00:26 di luar jam shift');
+  });
+
+  it('scan dini hari diabaikan, masuk & pulang dari scan berikutnya', () => {
+    const a = k('SIANG');
+    scan(a, '2026-09-29', '00:26:00', '12:20:00', '21:00:00');
+    const h = w.hari(a, '2026-09-29');
+    expect([h.status, h.jamMasuk, h.jamPulang, h.telatMenit, h.durasiMenit]).toEqual(['telat', '12:20:00', '21:00:00', 20, 520]);
+  });
+
+  it('datang awal masih dalam batas tetap dihitung', () => {
+    const a = k('SUBUH');
+    scan(a, '2026-09-29', '03:00:00', '14:30:00');
+    const h = w.hari(a, '2026-09-29');
+    expect([h.status, h.jamMasuk, h.scanDiabaikan]).toEqual(['hadir', '03:00:00', []]);
+  });
+
+  it('koreksi menimpa scan di luar jam shift tanpa catatan', () => {
+    const a = k('SIANG');
+    scan(a, '2026-09-29', '00:26:00');
+    w.koreksi.push({ karyawanId: a.id, tanggal: '2026-09-29', jamMasuk: '12:00:00', jamPulang: '21:00:00', alasan: 'lupa scan' });
+    const h = w.hari(a, '2026-09-29');
+    expect([h.status, h.jamMasuk, h.catatan]).toEqual(['hadir', '12:00:00', 'Koreksi: lupa scan']);
+  });
 });

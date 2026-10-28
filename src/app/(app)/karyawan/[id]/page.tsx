@@ -85,7 +85,7 @@ export default async function HalamanDetailKaryawan({ params, searchParams }: {
                       {h.tanpaScanMasuk && 'Tidak scan masuk. '}
                       {h.jumlahScan > 2 && `${h.jumlahScan} kali scan. `}
                       {h.dikoreksi && <span className="ab-tag">dikoreksi</span>} {h.catatan}
-                      {kelola && h.hariKerja && !h.dikoreksi && (['alpa', 'libur_jatah', 'libur_lebih'].includes(h.status) || h.lupaPulang || h.tanpaScanMasuk) && (
+                      {kelola && h.hariKerja && !h.dikoreksi && (['alpa', 'libur_jatah', 'libur_lebih'].includes(h.status) || h.lupaPulang || h.tanpaScanMasuk || h.scanDiabaikan.length > 0) && (
                         <> <Link href={`/koreksi/baru?karyawan=${id}&tanggal=${h.tanggal}`}>koreksi</Link></>
                       )}
                     </td>

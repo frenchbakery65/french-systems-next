@@ -58,6 +58,7 @@ export default async function HalamanHariIni({ searchParams }: { searchParams: P
   for (const h of hari) {
     if (h.jamMasuk) peran.set(`${h.karyawan.pin}|${h.jamMasuk}`, 'Masuk');
     if (h.jamPulang) peran.set(`${h.karyawan.pin}|${h.jamPulang}`, 'Pulang');
+    for (const j of h.scanDiabaikan) peran.set(`${h.karyawan.pin}|${j}`, 'Di luar jam shift');
   }
   const [scanTerbaru, namaPin, pinAsing, mesin] = await Promise.all([
     db.select().from(schema.logAbsen)
@@ -189,7 +190,7 @@ export default async function HalamanHariIni({ searchParams }: { searchParams: P
                               {' '}<Link href={`/izin/baru?karyawan=${h.karyawan.id}&tanggal=${tgl}`}>+ izin</Link> ·{' '}
                               <Link href={`/koreksi/baru?karyawan=${h.karyawan.id}&tanggal=${tgl}`}>+ koreksi</Link>
                             </>}
-                            {kelola && h.lupaPulang && !h.dikoreksi && <> <Link href={`/koreksi/baru?karyawan=${h.karyawan.id}&tanggal=${tgl}`}>+ koreksi</Link></>}
+                            {kelola && (h.lupaPulang || h.scanDiabaikan.length > 0) && !h.dikoreksi && !['alpa', 'libur_jatah', 'libur_lebih'].includes(h.status) && <> <Link href={`/koreksi/baru?karyawan=${h.karyawan.id}&tanggal=${tgl}`}>+ koreksi</Link></>}
                           </td>
                         </tr>
                       </FragmentBaris>

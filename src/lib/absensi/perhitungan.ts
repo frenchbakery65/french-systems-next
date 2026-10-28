@@ -8,6 +8,8 @@
  * - Koreksi manual menimpa jam masuk/pulang hasil mesin (log asli tetap utuh).
  * - Jam kerja per karyawan per tanggal dari JadwalHarian (shift bawaan, tukar shift, libur rutin).
  * - Telat jika jam masuk > jam masuk shift + toleransi shift. Menit telat dihitung dari jam masuk shift.
+ * - Scan lebih dari BATAS_SCAN_AWAL_MENIT sebelum jam masuk shift (mis. 00:26 untuk shift 12:00) tidak dihitung
+ *   sebagai masuk/pulang; hari itu diberi catatan supaya HRD mengecek dan mengoreksinya.
  * - Karyawan bulanan: semua hari adalah hari kerja; hari tanpa scan menjadi libur yang memakai jatah
  *   per periode gaji (libur_jatah / libur_lebih, lihat jatah-libur.ts), bukan "tidak hadir".
  */
@@ -22,6 +24,8 @@ import {
 
 export const STATUS_MASUK = [0, 2, 3, 4];
 export const STATUS_PULANG = [1, 5];
+/** Scan yang lebih awal dari ini sebelum jam masuk shift dianggap di luar jam shift. */
+export const BATAS_SCAN_AWAL_MENIT = 240;
 
 /** Status absensi satu karyawan pada satu tanggal. Jam disimpan sebagai "HH:MM:SS". */
 export class HariAbsen {
@@ -33,6 +37,8 @@ export class HariAbsen {
   /** Menit kerja di luar jadwal: setelah jam pulang (hari kerja) atau seluruh durasi (hari libur). */
   lemburMenit = 0;
   jumlahScan = 0;
+  /** Jam scan ("HH:MM:SS") yang diabaikan karena jauh sebelum jam masuk shift. */
+  scanDiabaikan: string[] = [];
   lupaPulang = false;
   tanpaScanMasuk = false;
   dikoreksi = false;
@@ -196,9 +202,18 @@ export class Perhitungan {
       return hari;
     }
 
-    const scans = this.scan.get(`${k.pin}|${key}`) ?? [];
+    let scans = this.scan.get(`${k.pin}|${key}`) ?? [];
     hari.jumlahScan = scans.length;
     let [masuk, pulang] = tentukanMasukPulang(scans, this.data.jadwal.jarakMinimalPulangMenit);
+    const jdScan = this.jadwalHarian.untuk(k, key, masuk ? keMenit(masuk) : null);
+    if (jdScan.hariKerja) {
+      const terlaluAwal = (s: ScanAbsen) => jdScan.masuk - keMenit(s.waktuScan.slice(11, 19)) > BATAS_SCAN_AWAL_MENIT;
+      hari.scanDiabaikan = scans.filter(terlaluAwal).map((s) => s.waktuScan.slice(11, 19));
+      if (hari.scanDiabaikan.length) {
+        scans = scans.filter((s) => !terlaluAwal(s));
+        [masuk, pulang] = tentukanMasukPulang(scans, this.data.jadwal.jarakMinimalPulangMenit);
+      }
+    }
 
     const kor = this.koreksi.get(`${k.id}|${key}`);
     if (kor) {
@@ -209,6 +224,10 @@ export class Perhitungan {
     }
     hari.jamMasuk = masuk;
     hari.jamPulang = pulang;
+    if (hari.scanDiabaikan.length && !kor) {
+      const jamScan = hari.scanDiabaikan.map((j) => j.slice(0, 5)).join(', ');
+      hari.tambahCatatan(`Scan ${jamScan} di luar jam shift (lebih dari ${BATAS_SCAN_AWAL_MENIT / 60} jam sebelum jam masuk), tidak dihitung — cek lalu koreksi bila perlu`);
+    }
 
     const izin = (this.izin.get(k.id) ?? []).find((iz) => iz.tanggalMulai <= key && iz.tanggalSelesai >= key);
     const jd = this.jadwalHarian.untuk(k, key, masuk ? keMenit(masuk) : null);
