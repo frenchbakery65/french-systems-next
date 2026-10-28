@@ -14,10 +14,11 @@ export default async function HalamanShift({ searchParams }: { searchParams: Pro
   await halamanPengelola();
   const { ubah } = await searchParams;
   const s = schema.shift;
+  // Ditulis "shift.id": ${s.id} di sini dirender tanpa nama tabel ("id") dan terbaca sebagai k.id di dalam subquery.
   const daftar = await db.select({
     s,
-    karyawan: sql<number>`(select count(*) from karyawan k where k.shift_id = ${s.id} and k.aktif)::int`,
-    dipakai: sql<boolean>`exists(select 1 from karyawan k where k.shift_id = ${s.id}) or exists(select 1 from jadwal_karyawan j where j.shift_id = ${s.id})`,
+    karyawan: sql<number>`(select count(*) from karyawan k where k.shift_id = shift.id and k.aktif)::int`,
+    dipakai: sql<boolean>`exists(select 1 from karyawan k where k.shift_id = shift.id) or exists(select 1 from jadwal_karyawan j where j.shift_id = shift.id)`,
   }).from(s).orderBy(asc(s.jamMasuk));
   const diubah = daftar.find((x) => String(x.s.id) === ubah)?.s ?? null;
   return (
