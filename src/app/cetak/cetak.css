@@ -1,0 +1,63 @@
+/* Gaya kertas (sama dengan template cetak sistem lama). Menimpa gaya dashboard pada <body>. */
+body.ab { display: block; background: #e9e7e2; color: #111; font: 12px/1.3 "Times New Roman", Times, serif; }
+.cetak { --ink: #111; --muted: #555; --line: #333; color: var(--ink); }
+.cetak * { box-sizing: border-box; }
+.cetak .toolbar { position: sticky; top: 0; z-index: 2; display: flex; gap: 10px; align-items: center; justify-content: center; padding: 10px; background: #1f4e5f; color: #fff; font: 14px -apple-system, "Segoe UI", sans-serif; }
+.cetak .toolbar button { font: inherit; padding: 7px 16px; border-radius: 8px; border: 0; background: #fff; color: #1f4e5f; font-weight: 600; cursor: pointer; }
+
+/* Slip: 2 per A4 */
+.cetak .halaman { width: 210mm; margin: 12px auto; }
+.cetak .slip { background: #fff; width: 210mm; min-height: 148mm; max-height: 148.4mm; padding: 7mm 12mm 6mm; border-bottom: 1px dashed #999; page-break-inside: avoid; break-inside: avoid; display: flex; flex-direction: column; }
+.cetak .kop { display: flex; align-items: center; gap: 10px; }
+.cetak .kop-logo { height: 15mm; width: auto; }
+.cetak .perusahaan { font-weight: 700; font-size: 14px; letter-spacing: .02em; }
+.cetak .judul { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .12em; }
+.cetak .kepala { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; margin-top: 4px; padding-bottom: 4px; border-bottom: 1px solid var(--line); font-weight: 700; }
+.cetak .kepala table { border-collapse: collapse; }
+.cetak .kepala table td { padding: 1px 0; vertical-align: top; }
+.cetak .kepala table td:first-child { width: 112px; }
+.cetak .isi { display: grid; grid-template-columns: 1fr; margin-top: 6px; }
+.cetak table.r { width: 100%; border-collapse: collapse; }
+.cetak table.r td { padding: 0.5px 0; vertical-align: bottom; line-height: 1.25; }
+.cetak table.r .sub { padding-left: 22px; }
+.cetak table.r .n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; width: 120px; }
+.cetak table.r .ket { color: var(--muted); font-size: 11.5px; padding-left: 10px; }
+.cetak table.r .garis td.n { border-top: 1px solid var(--line); }
+.cetak table.r .h td { font-weight: 700; padding-top: 4px; }
+.cetak table.r .total td { font-weight: 700; }
+.cetak .bersih { display: flex; justify-content: space-between; align-items: baseline; margin-top: 4px; padding: 3px 0; border-top: 2px solid var(--line); font-weight: 700; font-size: 15px; }
+.cetak .absen { margin-top: 4px; font-size: 11.5px; color: var(--muted); }
+.cetak .kaki { margin-top: auto; padding-top: 8px; display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; }
+.cetak .ttd { text-align: center; font-weight: 700; }
+.cetak .ttd .kota { margin-bottom: 22px; }
+.cetak .catatan { max-width: 110mm; font-size: 11px; color: var(--muted); }
+/* slip dengan baris "Pot. libur lebih" / "Pot 5": jarak dirapatkan supaya tetap 2 slip per A4 */
+.cetak .slip.padat table.r .h td { padding-top: 2px; }
+.cetak .slip.padat .kaki { padding-top: 3px; }
+.cetak .slip.padat .ttd .kota { margin-bottom: 16px; }
+.cetak .slip.padat2 table.r td { line-height: 1.15; }
+
+/* Rekap gaji: A4 landscape */
+.cetak .lembar { background: #fff; width: 297mm; min-height: 210mm; margin: 12px auto; padding: 8mm; font: 9.5px/1.3 Arial, Helvetica, sans-serif; }
+.cetak .lembar .kop { justify-content: space-between; align-items: flex-end; margin-bottom: 4mm; }
+.cetak .lembar .judul { font-size: 11px; font-weight: 700; color: var(--ink); letter-spacing: .08em; }
+.cetak .lembar .periode { font-size: 11px; font-weight: 700; }
+.cetak .lembar table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.cetak .lembar th { font-weight: 700; text-align: left; padding: 3px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); white-space: nowrap; }
+.cetak .lembar td { padding: 1px 3px; white-space: nowrap; }
+.cetak .lembar .n { text-align: right; }
+.cetak .lembar tbody { break-inside: avoid; page-break-inside: avoid; }
+.cetak .lembar .b1 td { padding-top: 3px; }
+.cetak .lembar .b2 td { font-weight: 700; padding-bottom: 3px; border-bottom: 0.5px solid #999; }
+.cetak .lembar tfoot td { font-weight: 700; padding: 3px; }
+.cetak .lembar .gran td { border-top: 1px solid var(--line); }
+.cetak .lembar .grand td { border-bottom: 1px solid var(--line); }
+.cetak .lembar thead { display: table-header-group; }
+.cetak .lembar tfoot { display: table-row-group; }
+
+@media print {
+  body.ab { background: #fff; }
+  .cetak .toolbar { display: none; }
+  .cetak .halaman { margin: 0; }
+  .cetak .lembar { width: auto; min-height: 0; margin: 0; padding: 0; }
+}

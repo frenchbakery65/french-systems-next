@@ -1,0 +1,14 @@
+# Database Postgres untuk pengembangan lokal (di Vercel memakai Neon).
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: absensi
+      POSTGRES_PASSWORD: absensi
+      POSTGRES_DB: absensi
+      TZ: Asia/Jakarta
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
