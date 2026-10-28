@@ -17,16 +17,47 @@ const ambilManual = (s: Manual): Manual => ({
   jamLemburManual: s.jamLemburManual, catatan: s.catatan,
 });
 
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/**
+ * Kunci baris periode selama transaksi, supaya hitung ulang, ubah slip manual, dan mengunci periode
+ * tidak saling menimpa (mis. webhook menghitung ulang saat HRD sedang mengisi kasbon).
+ * `lewati`: jika periode sedang dikunci proses lain, kembalikan null alih-alih menunggu.
+ */
+async function kunciBaris(tx: Tx, id: number, lewati = false) {
+  const [p] = await tx.select().from(schema.periodeGaji).where(eq(schema.periodeGaji.id, id))
+    .for('update', lewati ? { skipLocked: true } : undefined);
+  if (!p && !lewati) throw new Error('Periode tidak ditemukan.');
+  if (p?.status === 'final') throw new PeriodeFinal();
+  return p ?? null;
+}
+
+export interface OpsiHitung {
+  /** Lewati (kembalikan 0) jika periode sedang dihitung proses lain; dipakai hitung ulang otomatis di latar. */
+  lewatiJikaSibuk?: boolean;
+  /** Kunci periode (final) oleh user ini setelah dihitung, dalam transaksi yang sama. */
+  kunciOleh?: number;
+}
+
 /** Hitung ulang semua slip periode draf dari absensi. Isian manual HRD tidak ditimpa. Mengembalikan jumlah slip. */
-export async function hitungPeriode(p: PeriodeGaji): Promise<number> {
-  if (p.status === 'final') throw new PeriodeFinal();
+export async function hitungPeriode(awal: PeriodeGaji, opsi: OpsiHitung = {}): Promise<number> {
+  if (awal.status === 'final') throw new PeriodeFinal();
+  return db.transaction(async (tx) => {
+    const p = await kunciBaris(tx, awal.id, opsi.lewatiJikaSibuk);
+    if (!p) return 0;
+    return hitungDalamTransaksi(tx, p, opsi.kunciOleh);
+  });
+}
+
+async function hitungDalamTransaksi(tx: Tx, p: PeriodeGaji, kunciOleh?: number): Promise<number> {
+  // Absensi dibaca setelah periode dikunci, supaya log yang masuk sebelumnya pasti ikut terhitung.
   const [aturan, jadwal] = await Promise.all([pengaturanGaji(), jadwalUmum()]);
   const hitung = await muatPerhitungan(p.tanggalMulai, p.tanggalSelesai, { satuPeriode: true, masukSampai: p.tanggalSelesai });
   const rekap = hitung.rekap();
   const ids = rekap.map((r) => r.karyawan.id);
   const [penuh, ada] = await Promise.all([
-    ids.length ? db.select().from(schema.karyawan).where(inArray(schema.karyawan.id, ids)) : [],
-    db.select().from(schema.slipGaji).where(eq(schema.slipGaji.periodeGajiId, p.id)),
+    ids.length ? tx.select().from(schema.karyawan).where(inArray(schema.karyawan.id, ids)) : [],
+    tx.select().from(schema.slipGaji).where(eq(schema.slipGaji.periodeGajiId, p.id)),
   ]);
   const perId = new Map(penuh.map((k) => [k.id, k]));
   const manual = new Map(ada.map((s) => [s.karyawanId, ambilManual(s)]));
@@ -44,15 +75,16 @@ export async function hitungPeriode(p: PeriodeGaji): Promise<number> {
     Object.keys(baris[0] ?? {}).filter((c) => c !== 'periodeGajiId' && c !== 'karyawanId')
       .map((c) => [c, sql.raw(`excluded."${kolom[c as keyof typeof kolom].name}"`)]),
   );
-  await db.transaction(async (tx) => {
-    if (baris.length) {
-      await tx.insert(schema.slipGaji).values(baris)
-        .onConflictDoUpdate({ target: [schema.slipGaji.periodeGajiId, schema.slipGaji.karyawanId], set: diperbarui });
-    }
-    // karyawan yang sudah tidak termasuk periode ini dikeluarkan dari daftar
-    await tx.delete(schema.slipGaji).where(and(eq(schema.slipGaji.periodeGajiId, p.id), ids.length ? notInArray(schema.slipGaji.karyawanId, ids) : undefined));
-    await tx.update(schema.periodeGaji).set({ dihitungPada: new Date() }).where(eq(schema.periodeGaji.id, p.id));
-  });
+  if (baris.length) {
+    await tx.insert(schema.slipGaji).values(baris)
+      .onConflictDoUpdate({ target: [schema.slipGaji.periodeGajiId, schema.slipGaji.karyawanId], set: diperbarui });
+  }
+  // karyawan yang sudah tidak termasuk periode ini dikeluarkan dari daftar
+  await tx.delete(schema.slipGaji).where(and(eq(schema.slipGaji.periodeGajiId, p.id), ids.length ? notInArray(schema.slipGaji.karyawanId, ids) : undefined));
+  const kini = new Date();
+  await tx.update(schema.periodeGaji)
+    .set({ dihitungPada: kini, ...(kunciOleh ? { status: 'final', dikunciOleh: kunciOleh, dikunciPada: kini } : {}) })
+    .where(eq(schema.periodeGaji.id, p.id));
   return baris.length;
 }
 
@@ -65,7 +97,7 @@ export async function segarkan(p: PeriodeGaji) {
 export async function segarkanRentang(dari: Tgl, sampai: Tgl): Promise<number> {
   const daftar = await db.select().from(schema.periodeGaji)
     .where(and(ne(schema.periodeGaji.status, 'final'), lte(schema.periodeGaji.tanggalMulai, sampai), gte(schema.periodeGaji.tanggalSelesai, dari)));
-  for (const p of daftar) await hitungPeriode(p);
+  for (const p of daftar) await hitungPeriode(p, { lewatiJikaSibuk: true });
   return daftar.length;
 }
 
@@ -82,14 +114,31 @@ export async function segarkanSetelahLog(waktu: string[]) {
 
 /** Simpan perubahan manual pada satu slip lalu hitung ulang totalnya. */
 export async function ubahManual(slipId: number, data: Partial<Manual>) {
-  const [baris] = await db.select({ s: schema.slipGaji, status: schema.periodeGaji.status }).from(schema.slipGaji)
-    .innerJoin(schema.periodeGaji, eq(schema.periodeGaji.id, schema.slipGaji.periodeGajiId)).where(eq(schema.slipGaji.id, slipId));
-  if (!baris) throw new Error('Slip tidak ditemukan.');
-  if (baris.status === 'final') throw new PeriodeFinal();
-  const baru = hitungTotal({ ...(baris.s as unknown as Slip), ...data });
-  await db.update(schema.slipGaji).set({
-    ...ambilManual(baru), upahLembur: baru.upahLembur, subtotalGaji: baru.subtotalGaji, totalPenerimaan: baru.totalPenerimaan,
-    totalKotor: baru.totalKotor, totalPotongan: baru.totalPotongan, gajiBersih: baru.gajiBersih, updatedAt: new Date().toISOString(),
-  }).where(eq(schema.slipGaji.id, slipId));
-  return baru;
+  return db.transaction(async (tx) => {
+    const [ref] = await tx.select({ periodeId: schema.slipGaji.periodeGajiId }).from(schema.slipGaji).where(eq(schema.slipGaji.id, slipId));
+    if (!ref) throw new Error('Slip tidak ditemukan.');
+    await kunciBaris(tx, ref.periodeId); // tunggu hitung ulang yang sedang berjalan, tolak jika sudah final
+    const [s] = await tx.select().from(schema.slipGaji).where(eq(schema.slipGaji.id, slipId));
+    if (!s) throw new Error('Slip tidak ditemukan.');
+    const baru = hitungTotal({ ...(s as unknown as Slip), ...data });
+    await tx.update(schema.slipGaji).set({
+      ...ambilManual(baru), upahLembur: baru.upahLembur, subtotalGaji: baru.subtotalGaji, totalPenerimaan: baru.totalPenerimaan,
+      totalKotor: baru.totalKotor, totalPotongan: baru.totalPotongan, gajiBersih: baru.gajiBersih, updatedAt: new Date().toISOString(),
+    }).where(eq(schema.slipGaji.id, slipId));
+    return baru;
+  });
+}
+
+/** Periode final yang mencakup salah satu tanggal dalam [dari, sampai], jika ada. */
+export async function periodeFinalUntuk(dari: Tgl, sampai: Tgl = dari) {
+  const [p] = await db.select().from(schema.periodeGaji).where(and(
+    eq(schema.periodeGaji.status, 'final'), lte(schema.periodeGaji.tanggalMulai, sampai), gte(schema.periodeGaji.tanggalSelesai, dari),
+  )).limit(1);
+  return p ?? null;
+}
+
+/** Pesan galat jika tanggal masuk periode gaji yang sudah dikunci; null jika boleh diubah. */
+export async function cekTanggalTerkunci(dari: Tgl, sampai: Tgl = dari): Promise<string | null> {
+  const p = await periodeFinalUntuk(dari, sampai);
+  return p ? `Tanggal ini masuk periode gaji "${p.nama}" yang sudah dikunci (final). Minta admin membuka kunci periode itu dulu.` : null;
 }

@@ -4,6 +4,7 @@ import { and, eq, gte, inArray, lt } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { db, schema } from '@/db';
 import { wajibPengelola } from '@/lib/auth/sesi';
+import { cekTanggalTerkunci } from '@/lib/gaji/periode-db';
 import { sekarangIso, tanggalAtauNull, teks, teksAtauNull, type StateForm } from '@/lib/formulir';
 import { selisihHari, tambahHari, validTgl } from '@/lib/tanggal';
 
@@ -24,10 +25,18 @@ async function atur(karyawanId: number, tanggal: string, pilihan: string, catata
 
 const pilihanValid = (p: string) => p === 'bawaan' || p === 'libur' || /^\d+$/.test(p);
 
+/** Pilihan berupa id shift harus shift yang masih ada. */
+async function cekPilihan(p: string): Promise<string | null> {
+  if (!/^\d+$/.test(p)) return null;
+  return (await db.$count(schema.shift, eq(schema.shift.id, Number(p)))) ? null : 'Shift tidak ditemukan. Muat ulang halaman.';
+}
+
 export async function ubahSel(karyawanId: number, tanggal: string, _: StateForm, form: FormData): Promise<StateForm> {
   const u = await wajibPengelola();
   const pilihan = teks(form.get('pilihan'));
   if (!validTgl(tanggal) || !pilihanValid(pilihan)) return { pesan: 'Pilihan tidak valid.' };
+  const salah = await cekPilihan(pilihan) ?? await cekTanggalTerkunci(tanggal);
+  if (salah) return { pesan: salah };
   await atur(karyawanId, tanggal, pilihan, teksAtauNull(form.get('catatan')), u.id);
   revalidatePath('/', 'layout');
   return { ok: true, pesan: 'Jadwal disimpan.' };
@@ -37,12 +46,15 @@ export async function ubahSel(karyawanId: number, tanggal: string, _: StateForm,
 export async function salinMingguLalu(awal: string, idKaryawan: number[]): Promise<StateForm> {
   const u = await wajibPengelola();
   if (!validTgl(awal) || !idKaryawan.length) return { pesan: 'Tidak ada yang disalin.' };
+  const terkunci = await cekTanggalTerkunci(awal, tambahHari(awal, 6));
+  if (terkunci) return { pesan: terkunci };
   const sumber = await db.select().from(schema.jadwalKaryawan).where(and(
     inArray(schema.jadwalKaryawan.karyawanId, idKaryawan), gte(schema.jadwalKaryawan.tanggal, tambahHari(awal, -7)), lt(schema.jadwalKaryawan.tanggal, awal),
   ));
-  for (const j of sumber) await atur(j.karyawanId, tambahHari(j.tanggal, 7), j.libur ? 'libur' : String(j.shiftId), j.catatan, u.id);
+  const disalin = sumber.filter((j) => j.libur || j.shiftId); // shift yang sudah dihapus dilewati
+  for (const j of disalin) await atur(j.karyawanId, tambahHari(j.tanggal, 7), j.libur ? 'libur' : String(j.shiftId), j.catatan, u.id);
   revalidatePath('/', 'layout');
-  return { ok: true, pesan: `${sumber.length} jadwal disalin dari minggu lalu.` };
+  return { ok: true, pesan: `${disalin.length} jadwal disalin dari minggu lalu.` };
 }
 
 export async function aturBanyak(_: StateForm, form: FormData): Promise<StateForm> {
@@ -59,6 +71,8 @@ export async function aturBanyak(_: StateForm, form: FormData): Promise<StateFor
   else if (dari && selisihHari(dari, sampai) > 62) galat.sampai = 'Rentang maksimal 2 bulan.';
   if (!pilihanValid(pilihan)) galat.pilihan = 'Pilih shift.';
   if (Object.keys(galat).length) return { galat };
+  const salah = await cekPilihan(pilihan) ?? await cekTanggalTerkunci(dari!, sampai!);
+  if (salah) return { pesan: salah };
   let n = 0;
   for (let d = dari!; d <= sampai!; d = tambahHari(d, 1)) {
     for (const id of karyawan) { await atur(id, d, pilihan, teksAtauNull(form.get('catatan')), u.id); n++; }

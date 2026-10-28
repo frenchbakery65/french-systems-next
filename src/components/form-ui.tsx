@@ -35,12 +35,12 @@ export function useFormAksi<S>(aksi: (state: Awaited<S>, form: FormData) => Prom
   return [state, kirim, menunggu] as const;
 }
 
-/** Tombol dengan konfirmasi sebelum menjalankan aksi server (mis. hapus). */
+/** Tombol dengan konfirmasi sebelum menjalankan aksi server (mis. hapus). Jika aksi mengembalikan teks, teks itu ditampilkan. */
 export function TombolKonfirmasi({ aksi, pesan, label = 'Hapus', kelas = 'ab-btn ab-btn-bad' }: {
   aksi: () => Promise<unknown>; pesan: string; label?: string; kelas?: string;
 }) {
   return (
-    <form action={async () => { await aksi(); }} onSubmit={(e) => { if (!confirm(pesan)) e.preventDefault(); }} style={{ display: 'inline' }}>
+    <form action={async () => { const hasil = await aksi(); if (typeof hasil === 'string') alert(hasil); }} onSubmit={(e) => { if (!confirm(pesan)) e.preventDefault(); }} style={{ display: 'inline' }}>
       <TombolKecil kelas={kelas} label={label} />
     </form>
   );

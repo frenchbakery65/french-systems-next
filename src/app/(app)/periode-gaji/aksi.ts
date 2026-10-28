@@ -58,7 +58,9 @@ export async function hitungUlang(id: number): Promise<string> {
 
 export async function kunci(id: number) {
   const u = await wajibPengelola();
-  await db.update(schema.periodeGaji).set({ status: 'final', dikunciOleh: u.id, dikunciPada: new Date() }).where(eq(schema.periodeGaji.id, id));
+  const p = await ambil(id);
+  // hitung ulang dengan absensi terbaru lalu kunci dalam satu transaksi, supaya yang dikunci bukan angka lama
+  if (p.status !== 'final') await hitungPeriode(p, { kunciOleh: u.id });
   revalidatePath('/periode-gaji', 'layout');
 }
 

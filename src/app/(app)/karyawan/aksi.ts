@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { db, schema } from '@/db';
 import { wajibPengelola } from '@/lib/auth/sesi';
 import { JENIS_PEKERJA } from '@/lib/absensi/tipe';
-import { validTgl } from '@/lib/tanggal';
+import { hariIni, validTgl } from '@/lib/tanggal';
 
 const uang = z.preprocess((v) => Number(String(v ?? '').replace(/\D/g, '') || 0), z.number().int().min(0).max(1_000_000_000_000));
 const teksOpsional = (maks: number) => z.preprocess((v) => (String(v ?? '').trim() || null), z.string().max(maks).nullable());
@@ -54,9 +54,35 @@ export async function simpanKaryawan(id: number | null, _: StateForm, form: Form
     return { pesan: 'Periksa kembali isian yang ditandai.', galat };
   }
   const { departemenBaru, hariLiburMingguan, ...d } = hasil.data;
+  const periksa = 'Periksa kembali isian yang ditandai.';
+
+  // Status aktif harus sejalan dengan tanggal berhenti: rekap & gaji memakai tanggal berhenti untuk batas masa kerja.
+  // Nonaktif tanpa tanggal berhenti membuat karyawan hilang dari periode gaji berjalan beserta hari kerjanya.
+  if (!d.aktif && !d.tanggalKeluar) {
+    return { pesan: periksa, galat: { tanggalKeluar: 'Isi tanggal berhenti (hari terakhir bekerja) untuk karyawan yang tidak aktif, supaya gajinya tetap terhitung sampai tanggal itu.' } };
+  }
+  if (d.aktif && d.tanggalKeluar && d.tanggalKeluar < hariIni()) {
+    return { pesan: periksa, galat: { tanggalKeluar: 'Tanggal berhenti sudah lewat, tapi karyawan masih dicentang Aktif. Hilangkan centang Aktif, atau kosongkan tanggal berhenti jika masih bekerja.' } };
+  }
 
   const pinDipakai = await db.$count(schema.karyawan, and(eq(schema.karyawan.pin, d.pin), id ? ne(schema.karyawan.id, id) : undefined));
-  if (pinDipakai) return { pesan: 'Periksa kembali isian yang ditandai.', galat: { pin: 'PIN ini sudah dipakai karyawan lain.' } };
+  if (pinDipakai) return { pesan: periksa, galat: { pin: 'PIN ini sudah dipakai karyawan lain.' } };
+
+  // Scan terhubung ke karyawan lewat PIN: mengganti PIN memutus semua scan lama dari karyawan ini.
+  if (id) {
+    const [lama] = await db.select({ pin: schema.karyawan.pin }).from(schema.karyawan).where(eq(schema.karyawan.id, id));
+    const scanLama = lama && lama.pin !== d.pin ? await db.$count(schema.logAbsen, eq(schema.logAbsen.pin, lama.pin)) : 0;
+    if (scanLama && form.get('konfirmasiPin') !== 'on') {
+      return {
+        pesan: periksa,
+        galat: {
+          pin: `PIN lama ${lama.pin} punya ${scanLama} scan tercatat. Jika PIN diganti, scan itu tidak lagi terhitung untuk karyawan ini `
+            + '(rekap dan gaji periode draf ikut berubah). Ganti hanya jika PIN di mesin memang sudah diganti.',
+          konfirmasiPin: 'perlu',
+        },
+      };
+    }
+  }
 
   if (departemenBaru) {
     const [dep] = await db.insert(schema.departemen).values({ nama: departemenBaru })
@@ -77,8 +103,16 @@ export async function simpanKaryawan(id: number | null, _: StateForm, form: Form
   redirect(`/karyawan/${id}`);
 }
 
+/**
+ * Nonaktifkan: tanggal berhenti diisi hari ini jika masih kosong, supaya hari kerja periode berjalan tetap terhitung.
+ * Aktifkan lagi: tanggal berhenti yang sudah lewat dikosongkan, supaya hari berikutnya tidak dianggap di luar masa kerja.
+ */
 export async function ubahAktif(id: number, aktif: boolean) {
   await wajibPengelola();
-  await db.update(schema.karyawan).set({ aktif, updatedAt: new Date().toISOString() }).where(eq(schema.karyawan.id, id));
+  const [k] = await db.select({ tanggalKeluar: schema.karyawan.tanggalKeluar }).from(schema.karyawan).where(eq(schema.karyawan.id, id));
+  if (!k) return;
+  const kini = hariIni();
+  const tanggalKeluar = aktif ? (k.tanggalKeluar && k.tanggalKeluar < kini ? null : k.tanggalKeluar) : (k.tanggalKeluar ?? kini);
+  await db.update(schema.karyawan).set({ aktif, tanggalKeluar, updatedAt: new Date().toISOString() }).where(eq(schema.karyawan.id, id));
   revalidatePath('/', 'layout');
 }

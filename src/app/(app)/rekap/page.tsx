@@ -14,6 +14,8 @@ export const metadata = { title: 'Rekap periode' };
 
 type Cari = { periode?: string; mulai?: string; selesai?: string; departemen?: string };
 
+const rataRata = (xs: number[]) => (xs.length ? Math.round(xs.reduce((a, x) => a + x, 0) / xs.length) : null);
+
 export default async function HalamanRekap({ searchParams }: { searchParams: Promise<Cari> }) {
   await wajibLogin();
   const q = await searchParams;
@@ -25,13 +27,13 @@ export default async function HalamanRekap({ searchParams }: { searchParams: Pro
     db.select({ id: schema.departemen.id, nama: schema.departemen.nama }).from(schema.departemen).orderBy(asc(schema.departemen.nama)),
   ]);
   const rekap = hitung.rekap();
-  const n = rekap.length;
   const jumlah = (f: (r: (typeof rekap)[number]) => number) => rekap.reduce((a, r) => a + f(r), 0);
   const total = {
     telat: jumlah((r) => r.telat),
     alpa: jumlah((r) => r.alpa),
     lupaPulang: jumlah((r) => r.lupaPulang),
-    persen: n ? Math.round(jumlah((r) => r.persenHadir() ?? 0) / n) : null,
+    // karyawan tanpa hari kerja di rentang ini (persen null) tidak ikut dirata-rata
+    persen: rataRata(rekap.map((r) => r.persenHadir()).filter((x): x is number => x !== null)),
   };
   const kueri = new URLSearchParams(Object.entries({ periode: q.periode, mulai: q.mulai, selesai: q.selesai }).filter(([, v]) => v) as [string, string][]).toString();
 

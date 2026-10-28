@@ -1,6 +1,6 @@
 /** Menarik log dari mesin (lewat Fingerspot.io) dan menyimpannya ke database tanpa duplikat. */
 import 'server-only';
-import { and, desc, eq, inArray, lt } from 'drizzle-orm';
+import { and, desc, eq, inArray, lt, sql } from 'drizzle-orm';
 import { db, schema } from '@/db';
 import type { Mesin } from '@/db/schema';
 import { dekripsi } from '../enkripsi';
@@ -39,18 +39,31 @@ async function catatRiwayat(mesinId: number, pesan: string) {
   await db.insert(schema.riwayatSinkron).values({ mesinId, mulai: kini, selesai: kini, berhasil: true, pesan });
 }
 
+/** Tanggal scan pertama per PIN, dipakai sebagai tanggal mulai bekerja karyawan yang didaftarkan otomatis. */
+export function scanPertama(baris: Pick<BarisLog, 'pin' | 'waktu'>[]): Map<string, string> {
+  const hasil = new Map<string, string>();
+  for (const b of baris) {
+    const pin = b.pin.trim();
+    const tgl = b.waktu.slice(0, 10);
+    if (pin && (!hasil.has(pin) || tgl < hasil.get(pin)!)) hasil.set(pin, tgl);
+  }
+  return hasil;
+}
+
 /**
  * PIN yang scan di mesin tapi belum ada di dashboard langsung didaftarkan sebagai karyawan
  * (nama sementara "Karyawan PIN x"), supaya scannya ikut terhitung di rekap. Nama asli diminta
- * ke mesin; jawabannya datang lewat webhook.
+ * ke mesin; jawabannya datang lewat webhook. Tanggal mulai bekerja = tanggal scan pertama, supaya
+ * hari sebelum itu tidak dihitung sebagai libur/tidak hadir.
  */
-export async function daftarkanPinBaru(m: Mesin, pins: string[]): Promise<string[]> {
-  const unik = [...new Set(pins.map((p) => p.trim()).filter(Boolean))];
+export async function daftarkanPinBaru(m: Mesin, baris: BarisLog[]): Promise<string[]> {
+  const pertama = scanPertama(baris);
+  const unik = [...pertama.keys()];
   if (!unik.length) return [];
   const ada = new Set((await db.select({ pin: schema.karyawan.pin }).from(schema.karyawan).where(inArray(schema.karyawan.pin, unik))).map((x) => x.pin));
   const baru = unik.filter((p) => !ada.has(p));
   if (!baru.length) return [];
-  await db.insert(schema.karyawan).values(baru.map((pin) => ({ pin, nama: NAMA_SEMENTARA + pin }))).onConflictDoNothing();
+  await db.insert(schema.karyawan).values(baru.map((pin) => ({ pin, nama: NAMA_SEMENTARA + pin, tanggalMasuk: pertama.get(pin) }))).onConflictDoNothing();
   for (const pin of baru) {
     try {
       await klienUntuk(m).mintaUser(pin);
@@ -67,11 +80,11 @@ export async function daftarkanPinBaru(m: Mesin, pins: string[]): Promise<string
  * Daftarkan PIN sebagai karyawan, atau isi namanya jika masih bernama sementara.
  * Nama yang sudah diisi orang tidak pernah ditimpa.
  */
-export async function isiKaryawan(pin: string, nama: string): Promise<'baru' | 'diisi' | null> {
+export async function isiKaryawan(pin: string, nama: string, tanggalMasuk: string | null = null): Promise<'baru' | 'diisi' | null> {
   pin = pin.trim();
   nama = nama.trim();
   if (!pin) return null;
-  const dibuat = await db.insert(schema.karyawan).values({ pin, nama: nama || NAMA_SEMENTARA + pin }).onConflictDoNothing().returning({ id: schema.karyawan.id });
+  const dibuat = await db.insert(schema.karyawan).values({ pin, nama: nama || NAMA_SEMENTARA + pin, tanggalMasuk }).onConflictDoNothing().returning({ id: schema.karyawan.id });
   if (dibuat.length) return 'baru';
   if (!nama) return null;
   const diisi = await db.update(schema.karyawan).set({ nama, updatedAt: new Date().toISOString() })
@@ -81,7 +94,9 @@ export async function isiKaryawan(pin: string, nama: string): Promise<'baru' | '
 
 /** Data user dari mesin (webhook get_userinfo). */
 export async function terimaUser(m: Mesin, pin: string, nama: string) {
-  const hasil = await isiKaryawan(pin, nama);
+  const [log] = await db.select({ pertama: sql<string | null>`min(${schema.logAbsen.waktuScan})` }).from(schema.logAbsen)
+    .where(eq(schema.logAbsen.pin, pin.trim()));
+  const hasil = await isiKaryawan(pin, nama, log?.pertama ? log.pertama.slice(0, 10) : null);
   if (hasil === 'diisi') await catatRiwayat(m.id, `Nama karyawan PIN ${pin.trim()} diisi dari mesin: ${nama.trim()}.`);
   if (hasil === 'baru') await catatRiwayat(m.id, `Karyawan baru dari mesin: ${nama.trim() || NAMA_SEMENTARA + pin.trim()} (PIN ${pin.trim()}).`);
   return hasil;
@@ -101,7 +116,7 @@ export async function sinkronMesin(m: Mesin, catatSelalu = false) {
     const dari = m.sinkronBerhasilTerakhir ? tambahHari(sekarang(m.sinkronBerhasilTerakhir).tanggal, -1) : tambahHari(hariIni, -MAKS_HARI);
     const baris = await klienUntuk(m).ambilLog(dari, hariIni);
     r.jumlahBaru = await simpanLog(baris, m.id);
-    await daftarkanPinBaru(m, baris.map((b) => b.pin));
+    await daftarkanPinBaru(m, baris);
     r.berhasil = true;
     r.jumlahDiterima = baris.length;
     r.pesan = `${baris.length} log dibaca dari Fingerspot.io (${dari.slice(8, 10)}/${dari.slice(5, 7)}–${hariIni.slice(8, 10)}/${hariIni.slice(5, 7)}), ${r.jumlahBaru} log baru disimpan.`;

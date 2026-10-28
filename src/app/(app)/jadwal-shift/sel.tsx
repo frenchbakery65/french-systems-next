@@ -62,7 +62,7 @@ export function AksiJadwal({ awal, judulMinggu, idKaryawan, karyawan, pilihan }:
         <button className="ab-btn">Salin minggu lalu</button>
       </form>
       <button type="button" className="ab-btn ab-btn-primary" onClick={() => setBuka(true)}>Atur banyak</button>
-      {pesan && <span className="ab-ok-msg" role="status" style={{ alignSelf: 'center' }}>{pesan.pesan}</span>}
+      {pesan && <span className={pesan.ok ? 'ab-ok-msg' : 'ab-error'} role="status" style={{ alignSelf: 'center' }}>{pesan.pesan}</span>}
       <Dialog buka={buka} tutup={() => setBuka(false)}>
         <form onSubmit={kirim} className="ab-form">
           <h2>Atur jadwal banyak karyawan</h2>
@@ -84,6 +84,7 @@ export function AksiJadwal({ awal, judulMinggu, idKaryawan, karyawan, pilihan }:
             <Galat state={state} nama="pilihan" />
           </label>
           <label className="ab-field"><span>Catatan</span><input className="ab-input" name="catatan" maxLength={255} /></label>
+          {state && !state.ok && <PesanForm state={state} />}
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button type="button" className="ab-btn" onClick={() => setBuka(false)}>Batal</button>
             <TombolSimpan label="Terapkan" menunggu={menungguBanyak} />

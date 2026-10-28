@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { Galat, TombolSimpan, useFormAksi } from '@/components/form-ui';
+import { Galat, PesanForm, TombolSimpan, useFormAksi } from '@/components/form-ui';
 import type { KoreksiAbsen } from '@/db/schema';
 import type { StateForm } from '@/lib/formulir';
 import { scanAsli, simpanKoreksi } from './aksi';
@@ -54,6 +54,7 @@ export function FormKoreksi({ kor, karyawan, awal }: Props) {
         <div className="ab-hint" style={{ marginTop: 0 }}><strong>Scan asli dari mesin pada tanggal ini:</strong> {scan}</div>
         {awal?.kembali && <input type="hidden" name="kembali" value={awal.kembali} />}
       </section>
+      <PesanForm state={state} />
       <div style={{ display: 'flex', gap: 8 }}>
         <TombolSimpan menunggu={menunggu} />
         <Link className="ab-btn" href="/koreksi">Batal</Link>

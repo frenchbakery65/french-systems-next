@@ -50,6 +50,7 @@ export function FormKaryawan({ k, departemen, shift, jamKerjaPerHari, pinAwal }:
             <span>PIN di mesin</span>
             <input className="ab-input" name="pin" defaultValue={k?.pin ?? pinAwal} required maxLength={20} aria-invalid={!!g.pin} />
             {g.pin ? <small className="ab-error">{g.pin}</small> : <small>Harus sama persis dengan PIN / No. ID karyawan di mesin absen.</small>}
+            {g.konfirmasiPin && <label className="ab-check"><input type="checkbox" name="konfirmasiPin" /> Saya mengerti, tetap ganti PIN</label>}
           </label>
           <label className="ab-field">
             <span>Nama</span>
@@ -111,7 +112,7 @@ export function FormKaryawan({ k, departemen, shift, jamKerjaPerHari, pinAwal }:
             <label className="ab-field">
               <span>Tanggal berhenti</span>
               <input className="ab-input" type="date" name="tanggalKeluar" defaultValue={k?.tanggalKeluar ?? ''} aria-invalid={!!g.tanggalKeluar} />
-              {g.tanggalKeluar ? <small className="ab-error">{g.tanggalKeluar}</small> : <small>Isi jika karyawan sudah keluar.</small>}
+              {g.tanggalKeluar ? <small className="ab-error">{g.tanggalKeluar}</small> : <small>Isi jika karyawan sudah keluar (wajib jika tidak aktif).</small>}
             </label>
             <label className="ab-check" style={{ alignSelf: 'center' }}>
               <input type="checkbox" name="aktif" defaultChecked={k?.aktif ?? true} /> Aktif

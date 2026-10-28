@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { wajibPengelola } from '@/lib/auth/sesi';
-import { isiKaryawan, simpanLog } from '@/lib/fingerspot/sinkron';
+import { isiKaryawan, scanPertama, simpanLog } from '@/lib/fingerspot/sinkron';
 import { bacaFile } from '@/lib/impor/excel';
 import { GalatImpor, parseBaris } from '@/lib/impor/parse';
 
@@ -25,10 +25,12 @@ export async function imporFile(_: HasilImpor, form: FormData): Promise<HasilImp
   }
 
   // Karyawan baru dibuat dari nama di file; nama sementara ("Karyawan PIN x") diisi. Nama yang sudah diisi orang tidak diubah.
+  // Karyawan baru: tanggal mulai bekerja = scan pertamanya di file (kosong untuk file daftar karyawan).
   const baru: string[] = [];
   const diisi: string[] = [];
+  const pertama = scanPertama(hasil.baris);
   for (const [pin, nama] of Object.entries(hasil.karyawan)) {
-    const s = await isiKaryawan(pin, nama);
+    const s = await isiKaryawan(pin, nama, pertama.get(pin) ?? null);
     if (s === 'baru') baru.push(`${nama} (PIN ${pin})`);
     if (s === 'diisi') diisi.push(`${nama} (PIN ${pin})`);
   }

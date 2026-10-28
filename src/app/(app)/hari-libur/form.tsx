@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Galat, TombolSimpan, useFormAksi } from '@/components/form-ui';
+import { Galat, PesanForm, TombolSimpan, useFormAksi } from '@/components/form-ui';
 import type { StateForm } from '@/lib/formulir';
 import { simpanHariLibur } from './aksi';
 
@@ -23,6 +23,7 @@ export function FormHariLibur({ h }: { h: { id: number; tanggal: string; keteran
         <TombolSimpan label={h ? 'Simpan' : 'Tambah'} menunggu={menunggu} />
         {h && <Link className="ab-btn" href="/hari-libur">Batal</Link>}
       </span>
+      <div style={{ flexBasis: '100%' }}><PesanForm state={state} /></div>
     </form>
   );
 }

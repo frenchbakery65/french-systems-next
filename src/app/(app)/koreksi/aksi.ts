@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { db, schema } from '@/db';
 import { wajibLogin, wajibPengelola } from '@/lib/auth/sesi';
+import { cekTanggalTerkunci } from '@/lib/gaji/periode-db';
 import { angkaAtauNull, jamAtauNull, sekarangIso, tanggalAtauNull, teks, type StateForm } from '@/lib/formulir';
 import { STATUS_SCAN } from '@/lib/log';
 import { keMenit, tambahHari, validTgl } from '@/lib/tanggal';
@@ -26,6 +27,9 @@ export async function simpanKoreksi(id: number | null, _: StateForm, form: FormD
     eq(schema.koreksiAbsen.karyawanId, karyawanId), eq(schema.koreksiAbsen.tanggal, tanggal), id ? ne(schema.koreksiAbsen.id, id) : undefined,
   ))) galat.tanggal = 'Sudah ada koreksi untuk karyawan ini pada tanggal tersebut. Ubah koreksi yang sudah ada.';
   if (Object.keys(galat).length) return { galat };
+  const lama = id ? (await db.select().from(schema.koreksiAbsen).where(eq(schema.koreksiAbsen.id, id)))[0] : undefined;
+  const terkunci = await cekTanggalTerkunci(tanggal!) ?? (lama ? await cekTanggalTerkunci(lama.tanggal) : null);
+  if (terkunci) return { pesan: terkunci };
   const nilai = { karyawanId: karyawanId!, tanggal: tanggal!, jamMasuk, jamPulang, alasan, updatedAt: sekarangIso() };
   if (id) await db.update(schema.koreksiAbsen).set(nilai).where(eq(schema.koreksiAbsen.id, id));
   else await db.insert(schema.koreksiAbsen).values({ ...nilai, dibuatOleh: u.id });
@@ -33,8 +37,12 @@ export async function simpanKoreksi(id: number | null, _: StateForm, form: FormD
   redirect(form.get('kembali') === 'karyawan' ? `/karyawan/${karyawanId}` : '/koreksi');
 }
 
-export async function hapusKoreksi(id: number) {
+export async function hapusKoreksi(id: number): Promise<string | void> {
   await wajibPengelola();
+  const [kor] = await db.select().from(schema.koreksiAbsen).where(eq(schema.koreksiAbsen.id, id));
+  if (!kor) return;
+  const terkunci = await cekTanggalTerkunci(kor.tanggal);
+  if (terkunci) return terkunci;
   await db.delete(schema.koreksiAbsen).where(eq(schema.koreksiAbsen.id, id));
   revalidatePath('/', 'layout');
 }

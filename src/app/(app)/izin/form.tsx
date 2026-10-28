@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Galat, TombolSimpan, useFormAksi } from '@/components/form-ui';
+import { Galat, PesanForm, TombolSimpan, useFormAksi } from '@/components/form-ui';
 import type { Izin } from '@/db/schema';
 import { IZIN_TANPA_JATAH, JENIS_IZIN } from '@/lib/absensi/tipe';
 import type { StateForm } from '@/lib/formulir';
@@ -56,6 +56,7 @@ export function FormIzin({ iz, karyawan, bawaanJatah, awal }: Props) {
         </label>
         {awal?.kembali && <input type="hidden" name="kembali" value={awal.kembali} />}
       </section>
+      <PesanForm state={state} />
       <div style={{ display: 'flex', gap: 8 }}>
         <TombolSimpan menunggu={menunggu} />
         <Link className="ab-btn" href="/izin">Batal</Link>
