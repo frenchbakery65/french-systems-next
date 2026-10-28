@@ -35,6 +35,10 @@ export function FormPengaturanGaji({ a }: { a: PengaturanGaji }) {
             <small>Periode gaji berakhir pada tanggal ini dan dimulai sehari setelah tanggal yang sama di bulan sebelumnya.</small>
           </label>
           <label className="ab-field"><span>Kota di slip</span><input className="ab-input" name="kotaSlip" defaultValue={a.kotaSlip} required maxLength={60} />{g('kotaSlip')}</label>
+          <label className="ab-field"><span>Absensi mulai dicatat sejak</span>
+            <input className="ab-input" type="date" name="mulaiPakai" defaultValue={a.mulaiPakai ?? ''} />{g('mulaiPakai')}
+            <small>Scan dan hari sebelum tanggal ini (masa uji mesin) diabaikan: tidak dihitung hadir, tidak hadir, maupun libur. Kosongkan untuk mencatat sejak awal.</small>
+          </label>
         </div>
       </section>
 

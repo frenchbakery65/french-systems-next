@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { wajibPengelola } from '@/lib/auth/sesi';
-import { isiKaryawan, scanPertama, simpanLog } from '@/lib/fingerspot/sinkron';
+import { isiKaryawan, saringMulaiPakai, scanPertama, simpanLog } from '@/lib/fingerspot/sinkron';
 import { bacaFile } from '@/lib/impor/excel';
 import { GalatImpor, parseBaris } from '@/lib/impor/parse';
 
@@ -25,6 +25,11 @@ export async function imporFile(_: HasilImpor, form: FormData): Promise<HasilImp
   }
 
   // Karyawan baru dibuat dari nama di file; nama sementara ("Karyawan PIN x") diisi. Nama yang sudah diisi orang tidak diubah.
+  // Scan sebelum tanggal mulai dicatat (masa uji mesin) dilewati.
+  const dibaca = hasil.baris.length;
+  hasil.baris = await saringMulaiPakai(hasil.baris);
+  const sebelumMulai = dibaca - hasil.baris.length;
+
   // Karyawan baru: tanggal mulai bekerja = scan pertamanya di file (kosong untuk file daftar karyawan).
   const baru: string[] = [];
   const diisi: string[] = [];
@@ -37,10 +42,11 @@ export async function imporFile(_: HasilImpor, form: FormData): Promise<HasilImp
 
   const pesan: string[] = [];
   let judul: string;
-  if (hasil.baris.length) {
+  if (hasil.baris.length || sebelumMulai) {
     const jumlahBaru = await simpanLog(hasil.baris, null, 'impor');
     judul = 'Import selesai';
     pesan.push(`${hasil.baris.length} baris terbaca: ${jumlahBaru} log baru disimpan, ${hasil.baris.length - jumlahBaru} sudah ada sebelumnya (dilewati).`);
+    if (sebelumMulai) pesan.push(`${sebelumMulai} baris dilewati karena sebelum tanggal absensi mulai dicatat (Pengaturan gaji).`);
     if (hasil.dilewati) pesan.push(`${hasil.dilewati} baris dilewati karena PIN, nama, atau waktunya kosong/tidak terbaca.`);
   } else {
     judul = 'Daftar karyawan diimpor';

@@ -1,0 +1,1 @@
+ALTER TABLE "pengaturan_gaji" ADD COLUMN "mulai_pakai" date;

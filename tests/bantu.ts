@@ -34,6 +34,7 @@ export class Dunia {
   aturan = {
     tanggalTutupBuku: 29, liburNasionalKurangiJatah: false, hariPerBulan: 30, jamKerjaPerHari: 9,
     metodePotonganTelat: 'per_jam', potonganTelatPerKali: 2500, telatMinimalMenit: 60, telatPembulatanMenit: 60,
+    mulaiPakai: null as string | null,
   };
 
   constructor(public sekarang: string) {} // "YYYY-MM-DD HH:MM:SS"

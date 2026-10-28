@@ -46,6 +46,8 @@ export interface AturanAbsen {
   potonganTelatPerKali: number;
   telatMinimalMenit: number;
   telatPembulatanMenit: number;
+  /** Absensi mulai dicatat sejak tanggal ini (null = sejak awal). */
+  mulaiPakai: string | null;
 }
 
 export interface ScanAbsen { pin: string; waktuScan: string; statusScan: number | null }

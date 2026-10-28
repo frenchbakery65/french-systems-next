@@ -83,6 +83,8 @@ export default async function HalamanHariIni({ searchParams }: { searchParams: P
   const jumlahShift = new Set(hari.filter((h) => h.hariKerja && h.shiftKode).map((h) => h.shiftKode)).size;
   const tanpaShift = hari.filter((h) => h.hariKerja && !h.karyawan.shiftId).length;
   const liburKet = hitung.data.libur[tgl];
+  const { mulaiPakai } = aturan;
+  const sebelumMulai = Boolean(mulaiPakai && tgl < mulaiPakai);
   const periodeTelat = `${periode.nama ? `${periode.nama}: ` : ''}${formatTglBulan(periode.mulai)} – ${formatTglBulan(tgl)}`;
 
   let grupSebelum: string | null = null;
@@ -93,7 +95,9 @@ export default async function HalamanHariIni({ searchParams }: { searchParams: P
       <div className="ab">
         <div className="ab-toolbar">
           <p className="ab-sub">
-            {hariKerja
+            {sebelumMulai
+              ? <>Absensi baru dicatat mulai {formatPanjang(mulaiPakai!)} (Pengaturan gaji). Tanggal ini tidak dihitung.</>
+              : hariKerja
               ? <>Jam kerja sesuai shift masing-masing{jumlahShift ? ` · ${jumlahShift} shift hari ini` : ''}{tanpaShift ? ` · ${tanpaShift} orang belum punya shift (ditebak)` : ''}</>
               : liburKet ? <>Hari libur: {liburKet}</> : 'Bukan hari kerja'}
           </p>
@@ -152,7 +156,7 @@ export default async function HalamanHariIni({ searchParams }: { searchParams: P
                 </thead>
                 <tbody>
                   {hari.length === 0 && (
-                    <tr><td colSpan={7} className="ab-empty">Belum ada karyawan.{kelola && <> <Link href="/karyawan/baru">Tambah karyawan</Link> atau tarik dari mesin di menu <Link href="/mesin">Mesin &amp; sinkron</Link>.</>}</td></tr>
+                    <tr><td colSpan={7} className="ab-empty">{sebelumMulai ? `Absensi baru dicatat mulai ${formatPanjang(mulaiPakai!)}.` : <>Belum ada karyawan.{kelola && <> <Link href="/karyawan/baru">Tambah karyawan</Link> atau tarik dari mesin di menu <Link href="/mesin">Mesin &amp; sinkron</Link>.</>}</>}</td></tr>
                   )}
                   {hari.map((h) => {
                     const g = grup(h);

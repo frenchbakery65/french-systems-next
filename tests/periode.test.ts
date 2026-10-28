@@ -55,7 +55,7 @@ describe('utilitas', () => {
   });
 
   it('upah & perkiraan potongan telat', () => {
-    const a = { hariPerBulan: 30, jamKerjaPerHari: 9, metodePotonganTelat: 'per_jam', potonganTelatPerKali: 2500, telatMinimalMenit: 60, telatPembulatanMenit: 60, tanggalTutupBuku: 29, liburNasionalKurangiJatah: false };
+    const a = { hariPerBulan: 30, jamKerjaPerHari: 9, metodePotonganTelat: 'per_jam', potonganTelatPerKali: 2500, telatMinimalMenit: 60, telatPembulatanMenit: 60, tanggalTutupBuku: 29, liburNasionalKurangiJatah: false, mulaiPakai: null };
     expect(upah({ upahHarian: 0, gajiPokok: 2_700_000 }, a)).toEqual([90000, 10000]);
     expect(upah({ upahHarian: 90000, gajiPokok: 0 }, a)).toEqual([90000, 10000]);
     expect([menitTelatDipotong(45, a), menitTelatDipotong(70, a), menitTelatDipotong(125, a)]).toEqual([0, 60, 120]);

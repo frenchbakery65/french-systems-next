@@ -4,7 +4,9 @@ import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { db, schema } from '@/db';
 import { wajibPengelola } from '@/lib/auth/sesi';
-import { centang, sekarangIso, teks, type StateForm } from '@/lib/formulir';
+import { centang, sekarangIso, tanggalAtauNull, teks, type StateForm } from '@/lib/formulir';
+import { cekTanggalTerkunci } from '@/lib/gaji/periode-db';
+import { maxTgl, tambahHari } from '@/lib/tanggal';
 import { pengaturanGaji } from '@/lib/pengaturan';
 
 const uang = (v: FormDataEntryValue | null) => Number(teks(v).replace(/\D/g, '') || 0);
@@ -29,9 +31,16 @@ export async function simpanPengaturanGaji(_: StateForm, form: FormData): Promis
   const lemburMin = cek('lemburMinimalMenit', 0, 600, 'Isi 0–600 menit.');
   const lemburBulat = [60, 30, 15, 1].includes(angka('lemburPembulatanMenit')) ? angka('lemburPembulatanMenit') : 60;
   const maksTelat = teks(form.get('premiMaksTelat')) === '' ? null : cek('premiMaksTelat', 0, 100, 'Isi angka 0–100 atau kosongkan.');
+  const mulaiPakai = tanggalAtauNull(form.get('mulaiPakai'));
+  if (teks(form.get('mulaiPakai')) && !mulaiPakai) galat.mulaiPakai = 'Tanggal tidak valid.';
   if (Object.keys(galat).length) return { pesan: 'Periksa kembali isian yang ditandai.', galat };
 
   const a = await pengaturanGaji();
+  // Menggeser tanggal mulai dicatat mengubah absensi semua hari sebelum tanggal itu: tolak jika menyentuh periode final.
+  if (mulaiPakai !== a.mulaiPakai) {
+    const terkunci = await cekTanggalTerkunci('0001-01-01', tambahHari(maxTgl(mulaiPakai ?? '0001-01-02', a.mulaiPakai ?? '0001-01-02'), -1));
+    if (terkunci) return { pesan: 'Periksa kembali isian yang ditandai.', galat: { mulaiPakai: terkunci } };
+  }
   await db.update(schema.pengaturanGaji).set({
     tanggalTutupBuku: tutup, kotaSlip: kota, jamKerjaPerHari: jam, hariPerBulan: hari, metodePotonganTelat: metode,
     telatMinimalMenit: telatMin, telatPembulatanMenit: telatBulat, potonganTelatPerKali: uang(form.get('potonganTelatPerKali')),
@@ -40,7 +49,7 @@ export async function simpanPengaturanGaji(_: StateForm, form: FormData): Promis
     liburNasionalKurangiJatah: centang(form.get('liburNasionalKurangiJatah')),
     lemburOtomatis: centang(form.get('lemburOtomatis')), lemburMinimalMenit: lemburMin, lemburPembulatanMenit: lemburBulat,
     premiHangusJikaAlpa: centang(form.get('premiHangusJikaAlpa')), premiMaksTelat: maksTelat, prorataGajiPokok: centang(form.get('prorataGajiPokok')),
-    updatedAt: sekarangIso(),
+    mulaiPakai, updatedAt: sekarangIso(),
   }).where(eq(schema.pengaturanGaji.id, a.id));
   revalidatePath('/', 'layout');
   return { ok: true, pesan: 'Pengaturan gaji disimpan. Berlaku untuk periode yang dihitung (ulang) setelah ini. Periode yang sudah final tidak berubah.' };

@@ -2,7 +2,7 @@ import 'server-only';
 import { and, asc, eq, gte, inArray, isNull, lt, lte, or, sql } from 'drizzle-orm';
 import { db, schema } from '@/db';
 import { jadwalUmum, pengaturanGaji } from '../pengaturan';
-import { minTgl, sekarang, tambahHari, type Tgl } from '../tanggal';
+import { maxTgl, minTgl, sekarang, tambahHari, type Tgl } from '../tanggal';
 import { daftarPeriode, rentangPeriode } from './periode';
 import { Perhitungan } from './perhitungan';
 import type { DataAbsensi, KaryawanAbsen, PeriodeAbsen } from './tipe';
@@ -90,7 +90,8 @@ export async function muatPerhitungan(mulai: Tgl, selesai: Tgl, opsi: OpsiMuat =
 
 /** PIN yang muncul di log tapi belum terdaftar sebagai karyawan (30 hari terakhir). */
 export async function pinTidakDikenal(hari = 30) {
-  const batas = `${tambahHari(sekarang().tanggal, -hari)} 00:00:00`;
+  const { mulaiPakai } = await pengaturanGaji();
+  const batas = `${maxTgl(tambahHari(sekarang().tanggal, -hari), mulaiPakai ?? '0000-01-01')} 00:00:00`;
   return db
     .select({ pin: schema.logAbsen.pin, jumlah: sql<number>`count(*)::int`, terakhir: sql<string>`max(${schema.logAbsen.waktuScan})` })
     .from(schema.logAbsen)

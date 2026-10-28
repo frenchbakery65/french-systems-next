@@ -6,6 +6,8 @@
  * - Jam pulang = scan terakhir berstatus Pulang. Jika tidak ada, dipakai scan terakhir asalkan berjarak minimal
  *                N menit dari scan pertama (diatur di Jadwal kerja).
  * - Koreksi manual menimpa jam masuk/pulang hasil mesin (log asli tetap utuh).
+ * - Tanggal sebelum "Absensi mulai dicatat sejak" (Pengaturan gaji) diperlakukan seperti di luar masa kerja:
+ *   tidak dihitung hadir, tidak hadir, maupun libur.
  * - Jam kerja per karyawan per tanggal dari JadwalHarian (shift bawaan, tukar shift, libur rutin).
  * - Telat jika jam masuk > jam masuk shift + toleransi shift. Menit telat dihitung dari jam masuk shift.
  * - Scan lebih dari BATAS_SCAN_AWAL_MENIT sebelum jam masuk shift (mis. 00:26 untuk shift 12:00) tidak dihitung
@@ -197,7 +199,8 @@ export class Perhitungan {
 
   hitungHari(k: KaryawanAbsen, key: Tgl): HariAbsen {
     const hari = new HariAbsen(k, key);
-    if ((k.tanggalMasuk && key < k.tanggalMasuk) || (k.tanggalKeluar && key > k.tanggalKeluar)) {
+    const { mulaiPakai } = this.data.aturan;
+    if ((k.tanggalMasuk && key < k.tanggalMasuk) || (k.tanggalKeluar && key > k.tanggalKeluar) || (mulaiPakai && key < mulaiPakai)) {
       hari.status = 'luar_masa_kerja';
       return hari;
     }

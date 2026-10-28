@@ -213,6 +213,8 @@ export const pengaturanGaji = pgTable('pengaturan_gaji', {
   defaultIzinKurangiJatah: boolean('default_izin_kurangi_jatah').notNull().default(true),
   defaultSakitKurangiJatah: boolean('default_sakit_kurangi_jatah').notNull().default(false),
   liburNasionalKurangiJatah: boolean('libur_nasional_kurangi_jatah').notNull().default(false),
+  /** Absensi mulai dicatat sejak tanggal ini; scan & hari sebelumnya (masa uji mesin) diabaikan. null = sejak awal. */
+  mulaiPakai: date('mulai_pakai', { mode: 'string' }),
   createdAt: dibuat(),
   updatedAt: diubah(),
 });

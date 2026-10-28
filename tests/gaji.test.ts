@@ -9,7 +9,7 @@ import { Dunia } from './bantu';
 const ATURAN: AturanGaji = {
   tanggalTutupBuku: 29, liburNasionalKurangiJatah: false, hariPerBulan: 30, jamKerjaPerHari: 9, metodePotonganTelat: 'per_jam',
   potonganTelatPerKali: 2500, telatMinimalMenit: 60, telatPembulatanMenit: 60, potonganAlpaPerHari: 0, lemburOtomatis: true,
-  lemburMinimalMenit: 60, lemburPembulatanMenit: 60, premiHangusJikaAlpa: true, premiMaksTelat: null, prorataGajiPokok: true,
+  lemburMinimalMenit: 60, lemburPembulatanMenit: 60, premiHangusJikaAlpa: true, premiMaksTelat: null, prorataGajiPokok: true, mulaiPakai: null,
 };
 
 const gajiK = (k: KaryawanAbsen, lain: Partial<KaryawanGaji> = {}): KaryawanGaji =>

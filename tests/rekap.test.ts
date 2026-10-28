@@ -86,4 +86,17 @@ describe('status harian (pekerja harian, jadwal umum 08:00–17:00 Senin–Jumat
     expect([r.hariKerja, r.hadir, r.telat, r.alpa]).toEqual([5, 4, 1, 1]);
     expect(r.persenHadir()).toBe(80);
   });
+
+  it('hari sebelum absensi mulai dicatat tidak dihitung', () => {
+    w.aturan.mulaiPakai = tambahHari(SENIN, 3); // Kamis
+    w.log(k, `${SENIN} 08:20`); // scan uji: telat kalau dihitung
+    w.log(k, `${SENIN} 17:05`);
+    for (let i = 3; i < 5; i++) {
+      w.log(k, `${tambahHari(SENIN, i)} 07:50`);
+      w.log(k, `${tambahHari(SENIN, i)} 17:05`);
+    }
+    expect(w.hari(k, SENIN).status).toBe('luar_masa_kerja');
+    const r = w.hitung(SENIN, '2026-10-18').rekap()[0];
+    expect([r.hariKerja, r.hadir, r.telat, r.alpa]).toEqual([2, 2, 0, 0]);
+  });
 });

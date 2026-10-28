@@ -4,6 +4,7 @@ import { and, desc, eq, inArray, lt, sql } from 'drizzle-orm';
 import { db, schema } from '@/db';
 import type { Mesin } from '@/db/schema';
 import { dekripsi } from '../enkripsi';
+import { pengaturanGaji } from '../pengaturan';
 import { segarkanSetelahLog } from '../gaji/periode-db';
 import { sekarang, tambahHari } from '../tanggal';
 import { KlienFingerspot, MAKS_HARI, MesinError, type BarisLog } from './klien';
@@ -17,8 +18,15 @@ export function klienUntuk(m: Mesin): KlienFingerspot {
   return new KlienFingerspot(m.cloudId.trim(), dekripsi(m.apiToken).trim());
 }
 
+/** Buang scan sebelum tanggal "Absensi mulai dicatat sejak" (scan masa uji mesin). */
+export async function saringMulaiPakai<T extends Pick<BarisLog, 'waktu'>>(baris: T[]): Promise<T[]> {
+  const { mulaiPakai } = await pengaturanGaji();
+  return mulaiPakai ? baris.filter((b) => b.waktu.slice(0, 10) >= mulaiPakai) : baris;
+}
+
 /**
  * Simpan log (unik per PIN + waktu scan). Mengembalikan jumlah baris baru.
+ * Pemanggil menyaring scan sebelum tanggal mulai dicatat lebih dulu (saringMulaiPakai).
  * Ada log baru → slip periode draf dihitung ulang supaya telat & lembur terakumulasi.
  */
 export async function simpanLog(baris: BarisLog[], mesinId: number | null = null, sumber = 'mesin'): Promise<number> {
@@ -114,13 +122,16 @@ export async function sinkronMesin(m: Mesin, catatSelalu = false) {
   const ubah: Partial<typeof schema.mesin.$inferInsert> = {};
   try {
     const dari = m.sinkronBerhasilTerakhir ? tambahHari(sekarang(m.sinkronBerhasilTerakhir).tanggal, -1) : tambahHari(hariIni, -MAKS_HARI);
-    const baris = await klienUntuk(m).ambilLog(dari, hariIni);
+    const semua = await klienUntuk(m).ambilLog(dari, hariIni);
+    const baris = await saringMulaiPakai(semua);
     r.jumlahBaru = await simpanLog(baris, m.id);
     await daftarkanPinBaru(m, baris);
     r.berhasil = true;
-    r.jumlahDiterima = baris.length;
-    r.pesan = `${baris.length} log dibaca dari Fingerspot.io (${dari.slice(8, 10)}/${dari.slice(5, 7)}–${hariIni.slice(8, 10)}/${hariIni.slice(5, 7)}), ${r.jumlahBaru} log baru disimpan.`;
-    Object.assign(ubah, { statusTerakhir: 'ok', sinkronBerhasilTerakhir: mulai, jumlahLogDiMesin: baris.length });
+    r.jumlahDiterima = semua.length;
+    const dilewati = semua.length - baris.length;
+    r.pesan = `${semua.length} log dibaca dari Fingerspot.io (${dari.slice(8, 10)}/${dari.slice(5, 7)}–${hariIni.slice(8, 10)}/${hariIni.slice(5, 7)}), ${r.jumlahBaru} log baru disimpan.`
+      + (dilewati ? ` ${dilewati} log sebelum tanggal mulai dicatat dilewati.` : '');
+    Object.assign(ubah, { statusTerakhir: 'ok', sinkronBerhasilTerakhir: mulai, jumlahLogDiMesin: semua.length });
   } catch (e) {
     r.pesan = e instanceof MesinError ? e.message : `Error tak terduga: ${(e as Error).message}`;
     if (!(e instanceof MesinError)) console.error(e);
