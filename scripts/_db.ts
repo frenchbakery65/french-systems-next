@@ -5,7 +5,9 @@ import * as schema from '../src/db/schema';
 try { process.loadEnvFile('.env'); } catch { /* .env tidak wajib (mis. di Vercel) */ }
 
 if (!process.env.DATABASE_URL) {
-  console.error('DATABASE_URL belum diisi. Salin .env.example menjadi .env lalu isi.');
+  console.error(process.env.VERCEL
+    ? 'DATABASE_URL belum diisi. Di project Vercel: Storage → Create Database → Neon (Postgres), lalu deploy ulang.'
+    : 'DATABASE_URL belum diisi. Salin .env.example menjadi .env lalu isi.');
   process.exit(1);
 }
 
