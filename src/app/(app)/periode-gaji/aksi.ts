@@ -79,8 +79,8 @@ export async function ubahSlip(slipId: number, periodeId: number, _: StateForm, 
   const catatan = teks(form.get('catatan'));
   try {
     const s = await ubahManual(slipId, {
-      komisi: uang('komisi'), bonus: uang('bonus'), potKasbon: uang('potKasbon'), potPinjaman: uang('potPinjaman'),
-      potLain: uang('potLain'), pot5: uang('pot5'), jamLemburManual: jam ? Number(jam) : null, catatan: catatan ? catatan.slice(0, 255) : null,
+      tunjanganProfesi: uang('tunjanganProfesi'), bonus: uang('bonus'), potKasbon: uang('potKasbon'),
+      potLain: uang('potLain'), jamLemburManual: jam ? Number(jam) : null, catatan: catatan ? catatan.slice(0, 255) : null,
     });
     revalidatePath(`/periode-gaji/${periodeId}`);
     return { ok: true, pesan: `Slip ${s.nama} disimpan. Gaji bersih: Rp ${s.gajiBersih.toLocaleString('id-ID')}` };

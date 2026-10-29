@@ -30,7 +30,6 @@ export async function simpanPengaturanGaji(_: StateForm, form: FormData): Promis
   const telatBulat = [60, 30, 15, 1].includes(angka('telatPembulatanMenit')) ? angka('telatPembulatanMenit') : 60;
   const lemburMin = cek('lemburMinimalMenit', 0, 600, 'Isi 0–600 menit.');
   const lemburBulat = [60, 30, 15, 1].includes(angka('lemburPembulatanMenit')) ? angka('lemburPembulatanMenit') : 60;
-  const maksTelat = teks(form.get('premiMaksTelat')) === '' ? null : cek('premiMaksTelat', 0, 100, 'Isi angka 0–100 atau kosongkan.');
   const mulaiPakai = tanggalAtauNull(form.get('mulaiPakai'));
   if (teks(form.get('mulaiPakai')) && !mulaiPakai) galat.mulaiPakai = 'Tanggal tidak valid.';
   if (Object.keys(galat).length) return { pesan: 'Periksa kembali isian yang ditandai.', galat };
@@ -48,7 +47,7 @@ export async function simpanPengaturanGaji(_: StateForm, form: FormData): Promis
     defaultIzinKurangiJatah: centang(form.get('defaultIzinKurangiJatah')), defaultSakitKurangiJatah: centang(form.get('defaultSakitKurangiJatah')),
     liburNasionalKurangiJatah: centang(form.get('liburNasionalKurangiJatah')),
     lemburOtomatis: centang(form.get('lemburOtomatis')), lemburMinimalMenit: lemburMin, lemburPembulatanMenit: lemburBulat,
-    premiHangusJikaAlpa: centang(form.get('premiHangusJikaAlpa')), premiMaksTelat: maksTelat, prorataGajiPokok: centang(form.get('prorataGajiPokok')),
+    uangMakan: uang(form.get('uangMakan')), prorataGajiPokok: centang(form.get('prorataGajiPokok')),
     mulaiPakai, updatedAt: sekarangIso(),
   }).where(eq(schema.pengaturanGaji.id, a.id));
   revalidatePath('/', 'layout');

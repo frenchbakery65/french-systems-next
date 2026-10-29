@@ -122,7 +122,7 @@ export function FormKaryawan({ k, departemen, shift, jamKerjaPerHari, pinAwal }:
 
         <div className="ab-form-section">
           <h3>Gaji</h3>
-          <p className="ab-small ab-muted" style={{ margin: '0 0 10px' }}>Komponen tetap yang dipakai setiap periode gaji. Komisi, bonus, kasbon, dan pinjaman diisi per periode.</p>
+          <p className="ab-small ab-muted" style={{ margin: '0 0 10px' }}>Komponen tetap yang dipakai setiap periode gaji. Uang makan diatur sama rata di Pengaturan gaji. Tunjangan profesi, bonus, kasbon, dan potongan lain diisi per periode di halaman Periode gaji.</p>
           <div className="ab-form-grid">
             <Uang name="gajiPokok" label="Gaji pokok (per bulan)" nilai={k?.gajiPokok} galat={g.gajiPokok} />
             <Uang name="upahHarian" label="Upah harian" nilai={k?.upahHarian} galat={g.upahHarian}
@@ -143,16 +143,8 @@ export function FormKaryawan({ k, departemen, shift, jamKerjaPerHari, pinAwal }:
                   : <small>Gaji dihitung fix 30 hari termasuk libur. Libur dalam jatah tidak dipotong; lebih dari jatah dipotong gaji ÷ 30 per hari.</small>}
               </label>
             ) : <input type="hidden" name="jatahLibur" value={k?.jatahLibur ?? 2} />}
-            <Uang name="uangMakan" label="Uang makan" nilai={k?.uangMakan} />
-            <label className="ab-check" style={{ alignSelf: 'center' }}>
-              <input type="checkbox" name="uangMakanPerHari" defaultChecked={k?.uangMakanPerHari ?? false} /> Uang makan dikali hari hadir
-            </label>
-            <Uang name="tunjanganPrestasi" label="Tunjangan prestasi" nilai={k?.tunjanganPrestasi} />
-            {jenis !== 'Harian' ? (
-              <Uang name="premiHadir" label="Premi hadir" nilai={k?.premiHadir}
-                bantuan={jenis === 'Bulanan' ? 'Karyawan bulanan selalu mendapat premi penuh, tidak hangus walau libur atau tidak masuk.'
-                  : 'Bisa hangus sesuai aturan di Pengaturan gaji.'} />
-            ) : <input type="hidden" name="premiHadir" value="0" />}
+            <Uang name="tunjanganLoyalitas" label="Tunjangan loyalitas (per bulan)" nilai={k?.tunjanganLoyalitas} galat={g.tunjanganLoyalitas}
+              bantuan="Sesuai lama bekerja. Diterima setiap periode gaji; ubah di sini bila naik." />
           </div>
         </div>
 

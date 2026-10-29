@@ -15,7 +15,7 @@ export function AksiPeriode({ id, final, admin }: { id: number; final: boolean; 
   return (
     <>
       {!final && <button type="button" className="ab-btn ab-btn-primary" disabled={menunggu}
-        onClick={jalan('Angka absensi, lembur, premi, dan potongan absen dihitung ulang. Isian manual (komisi, bonus, kasbon, pinjaman, potongan lain, jam lembur manual) tidak berubah. Lanjutkan?', () => hitungUlang(id))}>
+        onClick={jalan('Angka absensi, lembur, uang makan, tunjangan loyalitas, dan potongan absen dihitung ulang. Isian manual (tunjangan profesi, bonus, kasbon, potongan lain, jam lembur manual) tidak berubah. Lanjutkan?', () => hitungUlang(id))}>
         {menunggu ? 'Memproses…' : 'Hitung ulang dari absensi'}</button>}
       {!final && <button type="button" className="ab-btn" disabled={menunggu}
         onClick={jalan('Kunci periode ini? Setelah dikunci, angka gaji tidak bisa diubah atau dihitung ulang. Lakukan setelah semua slip dicek.', () => kunci(id))}>Kunci (final)</button>}
@@ -30,7 +30,7 @@ export function AksiPeriode({ id, final, admin }: { id: number; final: boolean; 
 }
 
 export interface DataUbah {
-  id: number; nama: string; komisi: number; bonus: number; potKasbon: number; potPinjaman: number; potLain: number; pot5: number;
+  id: number; nama: string; tunjanganProfesi: number; bonus: number; potKasbon: number; potLain: number;
   jamLemburManual: number | null; jamOtomatis: string; catatan: string | null;
 }
 
@@ -59,7 +59,7 @@ export function UbahSlip({ d, periodeId }: { d: DataUbah; periodeId: number }) {
           <div><h2>Ubah slip — {d.nama}</h2><p className="ab-small ab-muted" style={{ margin: 0 }}>Isi komponen yang berbeda setiap periode. Total dihitung otomatis.</p></div>
           <h3 style={{ margin: 0, fontSize: 13 }}>Penerimaan</h3>
           <div className="ab-form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
-            <Uang name="komisi" label="Komisi" nilai={d.komisi} />
+            <Uang name="tunjanganProfesi" label="Tunjangan profesi" nilai={d.tunjanganProfesi} />
             <Uang name="bonus" label="Bonus" nilai={d.bonus} />
             <label className="ab-field"><span>Jam lembur (manual)</span>
               <input className="ab-input" name="jamLemburManual" inputMode="decimal" defaultValue={d.jamLemburManual ?? ''} placeholder={`otomatis: ${d.jamOtomatis}`} />
@@ -69,12 +69,10 @@ export function UbahSlip({ d, periodeId }: { d: DataUbah; periodeId: number }) {
           </div>
           <h3 style={{ margin: 0, fontSize: 13 }}>Potongan</h3>
           <div className="ab-form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
-            <Uang name="potKasbon" label="Kasbon" nilai={d.potKasbon} />
-            <Uang name="potPinjaman" label="Cicilan pinjaman (Pot 4)" nilai={d.potPinjaman} />
+            <Uang name="potKasbon" label="Kasbon (termasuk cicilan pinjaman)" nilai={d.potKasbon} />
             <Uang name="potLain" label="Potongan lain" nilai={d.potLain} />
-            <Uang name="pot5" label="Pot 5" nilai={d.pot5} />
           </div>
-          <label className="ab-field"><span>Catatan</span><input className="ab-input" name="catatan" defaultValue={d.catatan ?? ''} maxLength={255} placeholder="Contoh: kasbon 10 Sep, cicilan ke-2 dari 5" /></label>
+          <label className="ab-field"><span>Catatan</span><input className="ab-input" name="catatan" defaultValue={d.catatan ?? ''} maxLength={255} placeholder="Contoh: kasbon 10 Sep, cicilan ke-2 dari 5; potongan lain: gelas pecah" /></label>
           {state && !state.ok && <PesanForm state={state} />}
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button type="button" className="ab-btn" onClick={() => setBuka(false)}>Batal</button>

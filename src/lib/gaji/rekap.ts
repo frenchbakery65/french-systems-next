@@ -1,37 +1,37 @@
 /**
- * Susunan rekap gaji satu periode seperti rekapan kertas toko (16 kolom, 2 baris per karyawan).
+ * Susunan rekap gaji satu periode seperti rekapan kertas toko (14 kolom, 2 baris per karyawan).
  * Dipakai bersama oleh halaman Detail periode gaji, halaman cetak rekap, dan Export Excel.
  *
- * TOTAL PENERIMAAN = G.Pokok + Lembur + Premi_Hadir + Uang_makan + T.Prestasi + Bonus + Komisi
- * TOTAL POTONGAN   = Pot.Lain + Pot.KasBon + Pot.Absent + Pot 4 + Pot 5
+ * TOTAL PENERIMAAN = G.Pokok + T.Profesi + T.Loyalitas + Uang_makan + Lembur + Bonus
+ * TOTAL POTONGAN   = Pot.KasBon + Pot.Telat + Pot.Libur + Pot.Lain
  * PENERIMAAN BERSIH = TOTAL PENERIMAAN − TOTAL POTONGAN (sama dengan gaji_bersih)
  */
 import { minTgl, selisihHari, type Tgl } from '../tanggal';
 import { slipPakaiJatah, type Slip } from './hitung';
 
 export const KOLOM = [
-  'NIP', 'Nama Karyawan', 'Hdr', 'Abs', 'G.Pokok', 'Lembur', 'Premi_Hadir', 'Uang_makan', 'T.Prestasi',
-  'Bonus', 'Komisi', 'Pot.Lain', 'Pot.KasBon', 'Pot.Absent', 'Pot 4', 'Pot 5',
+  'NIP', 'Nama Karyawan', 'Hdr', 'Abs', 'G.Pokok', 'T.Profesi', 'T.Loyalitas', 'Uang_makan', 'Lembur', 'Bonus',
+  'Pot.KasBon', 'Pot.Telat', 'Pot.Libur', 'Pot.Lain',
 ] as const;
 
-/** Indeks kolom (0-based) yang berisi uang: G.Pokok s/d Pot 5. */
-export const KOLOM_UANG = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
-export const KOLOM_PENERIMAAN = [4, 5, 6, 7, 8, 9, 10];
-export const KOLOM_POTONGAN = [11, 12, 13, 14, 15];
+/** Indeks kolom (0-based) yang berisi uang: G.Pokok s/d Pot.Lain. */
+export const KOLOM_UANG = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
+export const KOLOM_PENERIMAAN = [4, 5, 6, 7, 8, 9];
+export const KOLOM_POTONGAN = [10, 11, 12, 13];
 
 /** Judul kolom di layar (bahasa biasa). Cetak rekap & Excel tetap memakai KOLOM seperti kertas. */
 export const JUDUL_LAYAR: Record<number, string> = {
-  2: 'Hadir', 3: 'Abs', 4: 'Gaji pokok', 5: 'Lembur', 6: 'Premi hadir', 7: 'Uang makan', 8: 'Tunj. prestasi',
-  9: 'Bonus', 10: 'Komisi', 11: 'Pot. lain', 12: 'Kasbon', 13: 'Pot. absen', 14: 'Pinjaman', 15: 'Pot 5',
+  2: 'Hadir', 3: 'Abs', 4: 'Gaji pokok', 5: 'Tunj. profesi', 6: 'Tunj. loyalitas', 7: 'Uang makan', 8: 'Lembur', 9: 'Bonus',
+  10: 'Kasbon', 11: 'Pot. telat', 12: 'Pot. tidak masuk', 13: 'Pot. lain',
 };
 
 export const KETERANGAN_LAYAR: Record<number, string> = {
   2: 'Hdr — hari hadir', 3: 'Abs — libur terpakai (karyawan dengan jatah libur) atau hari tidak hadir',
-  13: 'Pot.Absent — potongan telat + tidak hadir/libur lebih', 14: 'Pot 4 — cicilan pinjaman',
+  12: 'Pot.Libur — libur melebihi jatah (karyawan bulanan) atau tidak hadir tanpa keterangan',
 };
 
 /** Letak label & nilai baris total (indeks kolom 0-based): [label dari, label sampai, kolom nilai]. */
-const LETAK_TOTAL = { penerimaan: [2, 4, 5], potongan: [7, 8, 10], bersih: [12, 13, 15] } as const;
+const LETAK_TOTAL = { penerimaan: [2, 3, 4], potongan: [6, 7, 8], bersih: [10, 12, 13] } as const;
 
 export const LABEL_TOTAL = { penerimaan: 'TOTAL PENERIMAAN', potongan: 'TOTAL POTONGAN', bersih: 'PENERIMAAN BERSIH' };
 export const LABEL_GRAND = { penerimaan: 'Grand Total Penerimaan', potongan: 'Grand Total Potongan', bersih: 'Grand Total Gaji' };
@@ -50,20 +50,20 @@ export function urutSlip<T extends Pick<Slip, 'pin' | 'nama'>>(slip: T[]): T[] {
 /** Hari tidak masuk: libur terpakai untuk karyawan dengan jatah libur, selain itu tidak hadir (alpa). */
 export const abs = (s: Slip) => (slipPakaiJatah(s) ? s.liburTerpakai : s.alpa);
 
-/** Baris 1: 16 nilai sesuai KOLOM. */
+/** Baris 1: 14 nilai sesuai KOLOM. */
 export function baris(s: Slip): Baris {
   return [
     s.pin, s.nama.toUpperCase(), s.hadir, abs(s),
-    s.gajiPokok, s.upahLembur, s.premiHadir, s.uangMakan, s.tunjanganPrestasi,
-    s.bonus, s.komisi, s.potLain, s.potKasbon, s.potTelat + s.potAlpa, s.potPinjaman, s.pot5,
+    s.gajiPokok, s.tunjanganProfesi, s.tunjanganLoyalitas, s.uangMakan, s.upahLembur, s.bonus,
+    s.potKasbon, s.potTelat, s.potAlpa, s.potLain,
   ];
 }
 
 /** Baris 2: TOTAL PENERIMAAN, TOTAL POTONGAN, PENERIMAAN BERSIH dari angka baris 1. */
 export function total(b: Baris): Total {
   const jumlah = (dari: number, n: number) => (b.slice(dari, dari + n) as number[]).reduce((a, x) => a + x, 0);
-  const penerimaan = jumlah(4, 7);
-  const potongan = jumlah(11, 5);
+  const penerimaan = jumlah(KOLOM_PENERIMAAN[0], KOLOM_PENERIMAAN.length);
+  const potongan = jumlah(KOLOM_POTONGAN[0], KOLOM_POTONGAN.length);
   return { penerimaan, potongan, bersih: penerimaan - potongan };
 }
 
@@ -89,7 +89,7 @@ export function susun<T extends Slip>(slip: T[]): Rekap<T> {
   return { karyawan, gran, grand };
 }
 
-/** Sel baris total untuk kolom Hdr s/d Pot 5: daftar [colspan, 'label'|'nilai'|null, isi]. */
+/** Sel baris total untuk kolom Hdr s/d Pot.Lain: daftar [colspan, 'label'|'nilai'|null, isi]. */
 export function selTotal(nilai: Total, label: Record<keyof Total, string>): [number, 'label' | 'nilai' | null, string | number][] {
   const sel: [number, 'label' | 'nilai' | null, string | number][] = [];
   for (let i = 2; i < KOLOM.length; i++) {

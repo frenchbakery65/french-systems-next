@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import { halamanPengelola } from '@/lib/auth/sesi';
 import { durasi, rp } from '@/lib/format';
-import { formatJam, jamLembur, keteranganTelat, potLibur, slipPakaiJatah } from '@/lib/gaji/hitung';
+import { formatJam, jamLembur, keteranganTelat, keteranganTidakMasuk, slipPakaiJatah } from '@/lib/gaji/hitung';
 import { periodeAtau404, slipPeriode } from '@/lib/gaji/muat';
 import { segarkan } from '@/lib/gaji/periode-db';
 import { namaPerusahaan, pengaturanGaji } from '@/lib/pengaturan';
@@ -31,7 +31,7 @@ export default async function CetakSlip({ params, searchParams }: { params: Prom
       <div className="toolbar"><span>{slip.length} slip · {p.nama}</span><TombolCetak /></div>
       <div className="halaman">
         {slip.map((s) => (
-          <section key={s.id} className={`slip${s.liburLebih || s.pot5 ? ' padat' : ''}${s.liburLebih && s.pot5 ? ' padat2' : ''}`}>
+          <section key={s.id} className="slip">
             <div className="kop">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/logo-french-bakery.png" alt="" className="kop-logo" />
@@ -54,28 +54,20 @@ export default async function CetakSlip({ params, searchParams }: { params: Prom
             </div>
             <div className="isi">
               <table className="r"><tbody>
-                <tr><td>GAJI POKOK</td><td className="ket">{s.upahHarian ? `upah harian ${rp(s.upahHarian)} · ${rp(s.upahPerJam)}/jam` : ''}</td><td className="n">{rp(s.gajiPokok)}</td></tr>
-                <tr><td>LEMBUR</td><td className="ket">{formatJam(jamLembur(s))} jam × {rp(s.tarifLembur)}</td><td className="n">{rp(s.upahLembur)}</td></tr>
-                <tr><td>POTONGAN PINJAMAN</td><td /><td className="n">{s.potPinjaman ? `(${rp(s.potPinjaman)})` : '0'}</td></tr>
-                <tr className="garis total"><td /><td /><td className="n">{rp(s.subtotalGaji)}</td></tr>
-
                 <tr className="h"><td colSpan={3}>PENERIMAAN</td></tr>
-                <tr><td className="sub">Uang makan</td><td className="ket">{s.uangMakan && s.hadir && s.uangMakanPerHari ? `${s.hadir} hari` : ''}</td><td className="n">{rp(s.uangMakan)}</td></tr>
-                <tr><td className="sub">T. Prestasi</td><td /><td className="n">{rp(s.tunjanganPrestasi)}</td></tr>
-                <tr><td className="sub">Premi hadir</td><td /><td className="n">{rp(s.premiHadir)}</td></tr>
-                <tr><td className="sub">Komisi</td><td /><td className="n">{rp(s.komisi)}</td></tr>
-                <tr><td className="sub">Bonus</td><td /><td className="n">{rp(s.bonus)}</td></tr>
+                <tr><td className="sub">1. Gaji pokok</td><td className="ket">{s.upahHarian ? `upah harian ${rp(s.upahHarian)} · ${rp(s.upahPerJam)}/jam` : ''}</td><td className="n">{rp(s.gajiPokok)}</td></tr>
+                <tr><td className="sub">2. Tunjangan profesi</td><td /><td className="n">{rp(s.tunjanganProfesi)}</td></tr>
+                <tr><td className="sub">3. Tunjangan loyalitas</td><td /><td className="n">{rp(s.tunjanganLoyalitas)}</td></tr>
+                <tr><td className="sub">4. Uang makan</td><td /><td className="n">{rp(s.uangMakan)}</td></tr>
+                <tr><td className="sub">5. Lembur</td><td className="ket">{jamLembur(s) ? `${formatJam(jamLembur(s))} jam × ${rp(s.tarifLembur)}` : ''}</td><td className="n">{rp(s.upahLembur)}</td></tr>
+                <tr><td className="sub">6. Bonus</td><td /><td className="n">{rp(s.bonus)}</td></tr>
                 <tr className="garis total"><td>TOTAL PENERIMAAN</td><td /><td className="n">{rp(s.totalPenerimaan)}</td></tr>
-                <tr className="total"><td /><td className="ket" style={{ textAlign: 'right' }}>gaji + penerimaan</td><td className="n">{rp(s.totalKotor)}</td></tr>
 
                 <tr className="h"><td colSpan={3}>POTONGAN</td></tr>
-                <tr><td className="sub">Pot. lain</td><td /><td className="n">{rp(s.potLain)}</td></tr>
-                <tr><td className="sub">Pot. kasbon</td><td /><td className="n">{rp(s.potKasbon)}</td></tr>
-                <tr><td className="sub">Pot. absen</td>
-                  <td className="ket">{[keteranganTelat(s), s.alpa ? `tidak hadir ${s.alpa} hari` : null].filter(Boolean).join(' · ')}</td>
-                  <td className="n">{rp(s.potTelat + s.potAlpa - potLibur(s))}</td></tr>
-                {s.liburLebih > 0 && <tr><td className="sub">Pot. libur lebih</td><td className="ket">{s.liburLebih} hari × {rp(s.upahHarian)}</td><td className="n">{rp(potLibur(s))}</td></tr>}
-                {s.pot5 > 0 && <tr><td className="sub">Pot 5</td><td /><td className="n">{rp(s.pot5)}</td></tr>}
+                <tr><td className="sub">1. Kasbon</td><td /><td className="n">{rp(s.potKasbon)}</td></tr>
+                <tr><td className="sub">2. Telat</td><td className="ket">{keteranganTelat(s)}</td><td className="n">{rp(s.potTelat)}</td></tr>
+                <tr><td className="sub">3. Libur lebih / tidak masuk</td><td className="ket">{keteranganTidakMasuk(s)}</td><td className="n">{rp(s.potAlpa)}</td></tr>
+                <tr><td className="sub">4. Potongan lain</td><td /><td className="n">{rp(s.potLain)}</td></tr>
                 <tr className="garis total"><td>TOTAL POTONGAN</td><td /><td className="n">{rp(s.totalPotongan)}</td></tr>
               </tbody></table>
               <div className="bersih"><span>PENDAPATAN BERSIH</span><span>Rp {rp(s.gajiBersih)}</span></div>

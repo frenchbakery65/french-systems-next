@@ -28,10 +28,7 @@ const Skema = z.object({
   gajiPokok: uang,
   upahHarian: uang,
   tarifLemburPerJam: uang,
-  uangMakan: uang,
-  uangMakanPerHari: z.boolean(),
-  tunjanganPrestasi: uang,
-  premiHadir: uang,
+  tunjanganLoyalitas: uang,
   jatahLibur: z.coerce.number().int().min(0, 'Minimal 0').max(31, 'Maksimal 31'),
   catatan: teksOpsional(2000),
 }).refine((d) => !d.tanggalMasuk || !d.tanggalKeluar || d.tanggalKeluar >= d.tanggalMasuk, {
@@ -46,7 +43,6 @@ export async function simpanKaryawan(id: number | null, _: StateForm, form: Form
     ...Object.fromEntries(form),
     hariLiburMingguan: form.getAll('hariLiburMingguan'),
     aktif: form.get('aktif') === 'on',
-    uangMakanPerHari: form.get('uangMakanPerHari') === 'on',
   });
   if (!hasil.success) {
     const galat: Record<string, string> = {};
@@ -89,11 +85,10 @@ export async function simpanKaryawan(id: number | null, _: StateForm, form: Form
       .onConflictDoUpdate({ target: schema.departemen.nama, set: { nama: departemenBaru } }).returning({ id: schema.departemen.id });
     d.departemenId = dep.id;
   }
-  // Karyawan bulanan tidak punya libur rutin; Harian tidak mendapat premi hadir
+  // Karyawan bulanan tidak punya libur rutin
   const nilai = {
     ...d,
     hariLiburMingguan: d.jenisPekerja === 'Bulanan' || !hariLiburMingguan.length ? null : hariLiburMingguan,
-    premiHadir: d.jenisPekerja === 'Harian' ? 0 : d.premiHadir,
     updatedAt: new Date().toISOString(),
   };
   if (id) await db.update(schema.karyawan).set(nilai).where(eq(schema.karyawan.id, id));

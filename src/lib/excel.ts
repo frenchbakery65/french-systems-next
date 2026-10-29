@@ -4,7 +4,7 @@ import ExcelJS from 'exceljs';
 import { and, asc, gte, lt } from 'drizzle-orm';
 import { db, schema } from '@/db';
 import type { Perhitungan, RekapKaryawan } from './absensi/perhitungan';
-import { jamLembur, potLibur, slipPakaiJatah } from './gaji/hitung';
+import { jamLembur, slipPakaiJatah } from './gaji/hitung';
 import type { slipPeriode } from './gaji/muat';
 import { KOLOM, KOLOM_UANG, LABEL_GRAND, LABEL_TOTAL, selTotal, susun, urutSlip, type Total } from './gaji/rekap';
 import { STATUS_SCAN, SUMBER_LOG } from './log';
@@ -72,26 +72,24 @@ export async function eksporGaji(slip: SlipEkspor[]): Promise<Buffer> {
   const kolom = [
     'No', 'NIP/PIN', 'Nama', 'Departemen', 'Jabatan', 'Hari kerja', 'Hadir', 'Telat', 'Telat (menit)', 'Telat dipotong (menit)',
     'Tidak hadir', 'Izin/sakit/cuti', 'Panjang periode', 'Jatah libur', 'Libur terpakai', 'Libur lebih', 'Upah harian', 'Upah/jam',
-    'Gaji pokok', 'Jam lembur', 'Upah lembur/jam', 'Upah lembur', 'Pot. pinjaman', 'Subtotal',
-    'Uang makan', 'T. prestasi', 'Premi hadir', 'Komisi', 'Bonus', 'Total penerimaan',
-    'Pot. lain', 'Pot. kasbon', 'Pot. telat', 'Pot. tidak hadir', 'Potongan libur', 'Pot 5', 'Total potongan', 'Gaji bersih', 'Catatan',
+    'Gaji pokok', 'T. profesi', 'T. loyalitas', 'Uang makan', 'Jam lembur', 'Upah lembur/jam', 'Upah lembur', 'Bonus', 'Total penerimaan',
+    'Pot. kasbon', 'Pot. telat', 'Pot. libur lebih / tidak masuk', 'Pot. lain', 'Total potongan', 'Gaji bersih', 'Catatan',
   ];
   const rincian: Sel[][] = urutSlip(slip).map((s, i) => {
     const j = slipPakaiJatah(s);
     return [
       i + 1, s.pin, s.nama, s.departemen, s.jabatan, s.hariKerja, s.hadir, s.telat, s.menitTelat, s.menitTelatDipotong,
       s.alpa, s.izin, s.panjangPeriode || '', j ? s.jatahLibur : '', j ? s.liburTerpakai : '', j ? s.liburLebih : '',
-      s.upahHarian, s.upahPerJam, s.gajiPokok, jamLembur(s), s.tarifLembur, s.upahLembur, s.potPinjaman, s.subtotalGaji,
-      s.uangMakan, s.tunjanganPrestasi, s.premiHadir, s.komisi, s.bonus, s.totalPenerimaan,
-      s.potLain, s.potKasbon, s.potTelat, s.potAlpa - potLibur(s), potLibur(s), s.pot5, s.totalPotongan, s.gajiBersih,
+      s.upahHarian, s.upahPerJam, s.gajiPokok, s.tunjanganProfesi, s.tunjanganLoyalitas, s.uangMakan,
+      jamLembur(s), s.tarifLembur, s.upahLembur, s.bonus, s.totalPenerimaan,
+      s.potKasbon, s.potTelat, s.potAlpa, s.potLain, s.totalPotongan, s.gajiBersih,
       [s.catatanHitung, s.catatan].filter(Boolean).join('; '),
     ];
   });
   if (rincian.length) {
     // dijumlah berdasarkan nama kolom supaya tetap benar bila urutan kolom berubah
-    const dijumlah = ['Telat (menit)', 'Telat dipotong (menit)', 'Gaji pokok', 'Upah lembur', 'Pot. pinjaman', 'Subtotal', 'Uang makan', 'T. prestasi',
-      'Premi hadir', 'Komisi', 'Bonus', 'Total penerimaan', 'Pot. lain', 'Pot. kasbon', 'Pot. telat', 'Pot. tidak hadir', 'Potongan libur', 'Pot 5',
-      'Total potongan', 'Gaji bersih'];
+    const dijumlah = ['Telat (menit)', 'Telat dipotong (menit)', 'Gaji pokok', 'T. profesi', 'T. loyalitas', 'Uang makan', 'Upah lembur', 'Bonus',
+      'Total penerimaan', 'Pot. kasbon', 'Pot. telat', 'Pot. libur lebih / tidak masuk', 'Pot. lain', 'Total potongan', 'Gaji bersih'];
     const total: Sel[] = kolom.map(() => '');
     total[2] = 'TOTAL';
     for (const n of dijumlah) { const c = kolom.indexOf(n); total[c] = rincian.reduce((a, b) => a + Number(b[c] || 0), 0); }

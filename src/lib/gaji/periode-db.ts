@@ -13,7 +13,7 @@ export class PeriodeFinal extends Error {
 }
 
 const ambilManual = (s: Manual): Manual => ({
-  komisi: s.komisi, bonus: s.bonus, potKasbon: s.potKasbon, potPinjaman: s.potPinjaman, potLain: s.potLain, pot5: s.pot5,
+  tunjanganProfesi: s.tunjanganProfesi, bonus: s.bonus, potKasbon: s.potKasbon, potLain: s.potLain,
   jamLemburManual: s.jamLemburManual, catatan: s.catatan,
 });
 
@@ -65,8 +65,7 @@ async function hitungDalamTransaksi(tx: Tx, p: PeriodeGaji, kunciOleh?: number):
 
   const baris = rekap.map((r) => {
     const k = perId.get(r.karyawan.id)!;
-    const kg: KaryawanGaji = { ...r.karyawan, jabatan: k.jabatan, tarifLemburPerJam: k.tarifLemburPerJam, uangMakan: k.uangMakan,
-      uangMakanPerHari: k.uangMakanPerHari, tunjanganPrestasi: k.tunjanganPrestasi, premiHadir: k.premiHadir };
+    const kg: KaryawanGaji = { ...r.karyawan, jabatan: k.jabatan, tarifLemburPerJam: k.tarifLemburPerJam, tunjanganLoyalitas: k.tunjanganLoyalitas };
     return { ...hitungSlip(kg, r, konteks, manual.get(k.id) ?? MANUAL_KOSONG), periodeGajiId: p.id, karyawanId: k.id, updatedAt: new Date().toISOString() };
   });
 
@@ -122,8 +121,7 @@ export async function ubahManual(slipId: number, data: Partial<Manual>) {
     if (!s) throw new Error('Slip tidak ditemukan.');
     const baru = hitungTotal({ ...(s as unknown as Slip), ...data });
     await tx.update(schema.slipGaji).set({
-      ...ambilManual(baru), upahLembur: baru.upahLembur, subtotalGaji: baru.subtotalGaji, totalPenerimaan: baru.totalPenerimaan,
-      totalKotor: baru.totalKotor, totalPotongan: baru.totalPotongan, gajiBersih: baru.gajiBersih, updatedAt: new Date().toISOString(),
+      ...ambilManual(baru), upahLembur: baru.upahLembur, totalPenerimaan: baru.totalPenerimaan, totalPotongan: baru.totalPotongan, gajiBersih: baru.gajiBersih, updatedAt: new Date().toISOString(),
     }).where(eq(schema.slipGaji.id, slipId));
     return baru;
   });

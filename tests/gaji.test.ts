@@ -9,11 +9,11 @@ import { Dunia } from './bantu';
 const ATURAN: AturanGaji = {
   tanggalTutupBuku: 29, liburNasionalKurangiJatah: false, hariPerBulan: 30, jamKerjaPerHari: 9, metodePotonganTelat: 'per_jam',
   potonganTelatPerKali: 2500, telatMinimalMenit: 60, telatPembulatanMenit: 60, potonganAlpaPerHari: 0, lemburOtomatis: true,
-  lemburMinimalMenit: 60, lemburPembulatanMenit: 60, premiHangusJikaAlpa: true, premiMaksTelat: null, prorataGajiPokok: true, mulaiPakai: null,
+  lemburMinimalMenit: 60, lemburPembulatanMenit: 60, uangMakan: 0, prorataGajiPokok: true, mulaiPakai: null,
 };
 
 const gajiK = (k: KaryawanAbsen, lain: Partial<KaryawanGaji> = {}): KaryawanGaji =>
-  Object.assign(k, { jabatan: null, tarifLemburPerJam: 0, uangMakan: 0, uangMakanPerHari: false, tunjanganPrestasi: 0, premiHadir: 0, ...lain });
+  Object.assign(k, { jabatan: null, tarifLemburPerJam: 0, tunjanganLoyalitas: 0, ...lain });
 
 function slip(w: Dunia, k: KaryawanGaji, mulai: string, selesai: string, aturan: Partial<AturanGaji> = {}, manual: Partial<Manual> = {}) {
   const a = { ...ATURAN, ...aturan };
@@ -28,7 +28,7 @@ describe('slip contoh kertas (Rebecca, Kontrak)', () => {
   beforeEach(() => {
     w = new Dunia('2026-09-30 10:00:00');
     k = gajiK(w.tambah({ pin: '5005', nama: 'Rebecca R. Siburian', jenisPekerja: 'Kontrak', gajiPokok: 750000 }),
-      { tarifLemburPerJam: 75000, uangMakan: 150000, tunjanganPrestasi: 350000, premiHadir: 150000, jabatan: 'SPG_TOKO' });
+      { tarifLemburPerJam: 75000, tunjanganLoyalitas: 350000, jabatan: 'SPG_TOKO' });
     // Hadir semua hari kerja; satu hari telat; dua hari pulang jam 19:00 (lembur 2 jam)
     let no = 0;
     for (let d = '2026-08-30'; d <= '2026-09-29'; d = tambahHari(d, 1)) {
@@ -41,9 +41,13 @@ describe('slip contoh kertas (Rebecca, Kontrak)', () => {
   });
 
   it('angka sama dengan slip contoh', () => {
-    const s = slip(w, k, '2026-08-30', '2026-09-29', { metodePotonganTelat: 'per_kali' }, { bonus: 400000, potKasbon: 500000 });
-    expect([s.telat, jamLembur(s), s.upahLembur, s.subtotalGaji, s.totalPenerimaan, s.totalKotor, s.potTelat, s.totalPotongan, s.gajiBersih])
-      .toEqual([1, 4, 300000, 1050000, 1050000, 2100000, 2500, 502500, 1597500]);
+    const s = slip(w, k, '2026-08-30', '2026-09-29', { metodePotonganTelat: 'per_kali', uangMakan: 150000 },
+      { tunjanganProfesi: 100000, bonus: 400000, potKasbon: 500000, potLain: 20000 });
+    // 750.000 + profesi 100.000 + loyalitas 350.000 + makan 150.000 + lembur 4 × 75.000 + bonus 400.000
+    expect([s.telat, jamLembur(s), s.upahLembur, s.tunjanganProfesi, s.tunjanganLoyalitas, s.uangMakan, s.totalPenerimaan])
+      .toEqual([1, 4, 300000, 100000, 350000, 150000, 2050000]);
+    // kasbon 500.000 + telat 2.500 + lain 20.000
+    expect([s.potTelat, s.potAlpa, s.totalPotongan, s.gajiBersih]).toEqual([2500, 0, 522500, 1527500]);
   });
 
   it('jam lembur manual menimpa otomatis', () => {
@@ -51,30 +55,31 @@ describe('slip contoh kertas (Rebecca, Kontrak)', () => {
     expect([s.bonus, jamLembur(s), s.upahLembur]).toEqual([400000, 1.5, 112500]);
   });
 
-  it('karyawan harian tidak dapat premi hadir', () => {
-    k.jenisPekerja = 'Harian';
-    expect(slip(w, k, '2026-08-30', '2026-09-29').premiHadir).toBe(0);
+  it('uang makan sama rata untuk semua jenis pekerja, tidak tergantung hari hadir', () => {
+    for (const jenis of ['Harian', 'Kontrak', 'Magang']) {
+      k.jenisPekerja = jenis;
+      expect(slip(w, k, '2026-08-30', '2026-09-29', { uangMakan: 150000 }).uangMakan).toBe(150000);
+    }
   });
 });
 
-describe('premi hangus, potongan tidak hadir, uang makan per hari, prorata harian', () => {
-  it('premi hangus & potongan alpa (Kontrak)', () => {
+describe('potongan tidak hadir, prorata harian', () => {
+  it('potongan alpa (Kontrak) masuk pot. tidak masuk', () => {
     const w = new Dunia('2026-09-30 10:00:00');
-    const k = gajiK(w.tambah({ jenisPekerja: 'Kontrak', gajiPokok: 750000 }), { premiHadir: 150000 });
+    const k = gajiK(w.tambah({ jenisPekerja: 'Kontrak', gajiPokok: 750000 }));
     w.log(k, '2026-09-01 07:50:00'); w.log(k, '2026-09-01 17:00:00');
     const s = slip(w, k, '2026-08-30', '2026-09-29', { potonganAlpaPerHari: 25000 });
     expect(s.alpa).toBeGreaterThan(0);
-    expect([s.premiHadir, s.potAlpa]).toEqual([0, s.alpa * 25000]);
-    expect(s.catatanHitung).toContain('Premi hadir hangus');
+    expect([s.potAlpa, s.totalPotongan]).toEqual([s.alpa * 25000, s.alpa * 25000]);
   });
 
-  it('uang makan per hari dan prorata menurut hari kerja', () => {
+  it('gaji pokok prorata menurut hari kerja, uang makan tetap penuh', () => {
     const w = new Dunia('2026-09-30 10:00:00');
-    const k = gajiK(w.tambah({ jenisPekerja: 'Kontrak', gajiPokok: 750000, tanggalMasuk: '2026-09-15' }), { uangMakan: 10000, uangMakanPerHari: true });
+    const k = gajiK(w.tambah({ jenisPekerja: 'Kontrak', gajiPokok: 750000, tanggalMasuk: '2026-09-15' }));
     w.log(k, '2026-09-15 07:50:00'); w.log(k, '2026-09-15 17:00:00');
-    const s = slip(w, k, '2026-08-30', '2026-09-29');
-    expect(s.uangMakan).toBe(10000);
+    const s = slip(w, k, '2026-08-30', '2026-09-29', { uangMakan: 150000 });
     expect(s.gajiPokok).toBe(Math.round((750000 * 11) / 22)); // 15–29 Sep = 11 dari 22 hari kerja
+    expect(s.uangMakan).toBe(150000);
     expect(s.catatanHitung).toContain('Gaji pokok prorata 11/22 hari kerja');
   });
 });
@@ -160,13 +165,13 @@ describe('gaji bulanan: jatah libur & dipukul rata 30 hari', () => {
     expect(slip(w, b, '2026-10-01', '2026-10-31').catatanHitung).toContain('Libur 3 hari, jatah 2 → dipotong 1 × Rp90.000');
   });
 
-  it('premi hadir bulanan tetap penuh walau libur lebih', () => {
+  it('uang makan & tunjangan loyalitas tetap penuh walau libur lebih', () => {
     const k = bulanan();
-    k.premiHadir = 150000;
+    k.tunjanganLoyalitas = 200000;
     w.masukSemua(k, '2026-09-01', '2026-09-10');
-    const x = slip(w, k, '2026-09-01', '2026-09-30');
-    expect([x.premiHadir, x.liburLebih]).toEqual([150000, 18]);
-    expect(x.catatanHitung ?? '').not.toContain('Premi hadir hangus');
+    const x = slip(w, k, '2026-09-01', '2026-09-30', { uangMakan: 150000 });
+    expect([x.uangMakan, x.tunjanganLoyalitas, x.liburLebih, x.potAlpa]).toEqual([150000, 200000, 18, 18 * 90000]);
+    expect(x.gajiBersih).toBe(2700000 + 150000 + 200000 - 18 * 90000);
   });
 
   it('prorata dipukul rata 30 hari (periode 29/30/31 hari)', () => {
@@ -191,21 +196,22 @@ describe('gaji bulanan: jatah libur & dipukul rata 30 hari', () => {
 describe('rekap gaji seperti kertas', () => {
   const dasar = { ...MANUAL_KOSONG, departemen: null, jabatan: null, upahHarian: 0, upahPerJam: 0, hariKerja: 26, telat: 0, menitTelat: 0,
     menitTelatDipotong: 0, alpa: 0, izin: 0, panjangPeriode: 31, jatahLibur: 0, liburTerpakai: 0, liburLebih: 0, jamLemburOtomatis: 0,
-    tarifLembur: 10000, uangMakan: 0, tunjanganPrestasi: 0, premiHadir: 0, potTelat: 0, potAlpa: 0, catatanHitung: null, jenisPekerja: 'Harian' };
+    tarifLembur: 10000, uangMakan: 0, tunjanganLoyalitas: 0, potTelat: 0, potAlpa: 0, catatanHitung: null, jenisPekerja: 'Harian' };
   const buat = (pin: string, nama: string, lain: Record<string, number | string | null>) =>
     ({ ...hitungTotal({ ...dasar, pin, nama, hadir: 0, gajiPokok: 0, ...lain } as Parameters<typeof hitungTotal>[0]), id: Number(pin), karyawanId: Number(pin) });
 
   it('contoh RUM: 2.300.000 / 542.120 / 1.757.880, urut NIP numerik, bersih = gaji_bersih', () => {
-    const rum = buat('12', 'Rum', { gajiPokok: 800000, jamLemburOtomatis: 30, premiHadir: 150000, uangMakan: 150000, tunjanganPrestasi: 450000, bonus: 450000, potKasbon: 500000, potTelat: 42120, hadir: 26 });
-    const zaki = buat('101', 'Zaki', { gajiPokok: 2700000, potAlpa: 90000, potPinjaman: 100000, potLain: 25000, komisi: 75000, hadir: 27, alpa: 1 });
-    const budi = buat('3', 'Budi', { gajiPokok: 1500000, uangMakan: 200000, pot5: 30000, hadir: 25 });
+    const rum = buat('12', 'Rum', { gajiPokok: 800000, jamLemburOtomatis: 30, tunjanganLoyalitas: 150000, uangMakan: 150000, tunjanganProfesi: 450000, bonus: 450000, potKasbon: 500000, potTelat: 42120, hadir: 26 });
+    const zaki = buat('101', 'Zaki', { gajiPokok: 2700000, potAlpa: 90000, potLain: 125000, tunjanganProfesi: 75000, hadir: 27, alpa: 1 });
+    const budi = buat('3', 'Budi', { gajiPokok: 1500000, uangMakan: 200000, potLain: 30000, hadir: 25 });
     const r = susun([rum, zaki, budi]);
     expect(r.karyawan.map((x) => x.slip.nama)).toEqual(['Budi', 'Rum', 'Zaki']);
     expect(total(baris(rum))).toEqual({ penerimaan: 2300000, potongan: 542120, bersih: 1757880 });
-    for (const x of r.karyawan) expect(x.total.bersih).toBe(x.slip.gajiBersih);
+    for (const x of r.karyawan) expect([x.total.penerimaan, x.total.potongan, x.total.bersih]).toEqual([x.slip.totalPenerimaan, x.slip.totalPotongan, x.slip.gajiBersih]);
+    expect(baris(zaki).slice(10)).toEqual([0, 0, 90000, 125000]); // kasbon, telat, libur/tidak masuk, lain terpisah
     expect(r.grand.bersih).toBe(rum.gajiBersih + zaki.gajiBersih + budi.gajiBersih);
     expect(selTotal(total(baris(rum)), LABEL_TOTAL).filter(([, j]) => j).map(([n, j, isi]) => [n, j, isi]))
-      .toEqual([[3, 'label', 'TOTAL PENERIMAAN'], [1, 'nilai', 2300000], [2, 'label', 'TOTAL POTONGAN'], [1, 'nilai', 542120], [2, 'label', 'PENERIMAAN BERSIH'], [1, 'nilai', 1757880]]);
+      .toEqual([[2, 'label', 'TOTAL PENERIMAAN'], [1, 'nilai', 2300000], [2, 'label', 'TOTAL POTONGAN'], [1, 'nilai', 542120], [3, 'label', 'PENERIMAAN BERSIH'], [1, 'nilai', 1757880]]);
     expect(judulPeriode('2026-08-30', '2026-09-29')).toBe('Periode 30/08/2026 – 29/09/2026');
   });
 

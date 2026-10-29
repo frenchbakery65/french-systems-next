@@ -49,7 +49,7 @@ export default async function HalamanDetailPeriode({ params }: { params: Promise
         <section className="ab-stats">
           <div className="ab-stat"><span className="ab-stat-label">Total gaji bersih</span><span className="ab-stat-value ab-stat-value-sm">{rp(jumlah((s) => s.gajiBersih), true)}</span><span className="ab-stat-note">{slip.length} karyawan</span></div>
           <div className="ab-stat ab-stat-info"><span className="ab-stat-label">Total lembur</span><span className="ab-stat-value ab-stat-value-sm">{rp(jumlah((s) => s.upahLembur), true)}</span></div>
-          <div className="ab-stat ab-stat-warn"><span className="ab-stat-label">Potongan absen</span><span className="ab-stat-value ab-stat-value-sm">{rp(jumlah((s) => s.potTelat + s.potAlpa), true)}</span><span className="ab-stat-note">telat &amp; tidak hadir</span></div>
+          <div className="ab-stat ab-stat-warn"><span className="ab-stat-label">Potongan absen</span><span className="ab-stat-value ab-stat-value-sm">{rp(jumlah((s) => s.potTelat + s.potAlpa), true)}</span><span className="ab-stat-note">telat &amp; tidak masuk</span></div>
           <div className={`ab-stat${final ? '' : ' ab-stat-warn'}`}><span className="ab-stat-label">Status</span>
             <span className="ab-stat-value ab-stat-value-sm">{final ? 'Final' : 'Draf'}</span>
             <span className="ab-stat-note">{final ? 'angka sudah dikunci' : `dihitung ${p.dihitungPada ? fmtWaktu.format(p.dihitungPada) : '—'}`}</span></div>
@@ -102,7 +102,7 @@ export default async function HalamanDetailPeriode({ params }: { params: Promise
                   </tr>
                   <tr>
                     {Object.entries(JUDUL_LAYAR).map(([i, j]) => (
-                      <th key={i} className={`rg-n${['2', '4', '11'].includes(i) ? ' rg-awal' : ''}`} title={KETERANGAN_LAYAR[Number(i)]}>{j}</th>
+                      <th key={i} className={`rg-n${['2', '4', '10'].includes(i) ? ' rg-awal' : ''}`} title={KETERANGAN_LAYAR[Number(i)]}>{j}</th>
                     ))}
                     <th className="rg-n rg-awal">Penerimaan</th>
                     <th className="rg-n">Potongan</th>
@@ -118,7 +118,7 @@ export default async function HalamanDetailPeriode({ params }: { params: Promise
                         ? <td className={`rg-n${s.liburLebih ? ' rg-lebih' : ''}`} title={`jatah ${s.jatahLibur}, ${s.liburLebih ? `lebih ${s.liburLebih}` : `sisa ${Math.max(0, s.jatahLibur - s.liburTerpakai)}`}`}>{b[3]}</td>
                         : <td className="rg-n" title="Tidak hadir tanpa keterangan">{b[3] || kosong}</td>}
                       {KOLOM_PENERIMAAN.map((i) => <td key={i} className={`rg-n${i === 4 ? ' rg-awal' : ''}`}>{uang(b[i] as number) ?? kosong}</td>)}
-                      {KOLOM_POTONGAN.map((i) => <td key={i} className={`rg-n rg-pot${i === 11 ? ' rg-awal' : ''}`}>{uang(b[i] as number) ?? kosong}</td>)}
+                      {KOLOM_POTONGAN.map((i) => <td key={i} className={`rg-n rg-pot${i === 10 ? ' rg-awal' : ''}`}>{uang(b[i] as number) ?? kosong}</td>)}
                       <td className="rg-n rg-awal">{rp(t.penerimaan)}</td>
                       <td className="rg-n rg-pot">{uang(t.potongan) ?? kosong}</td>
                       <td className={`rg-n rg-bersih${t.bersih < 0 ? ' ab-text-bad' : ''}`}>{rp(t.bersih)}</td>
@@ -134,7 +134,7 @@ export default async function HalamanDetailPeriode({ params }: { params: Promise
                     <td className="rg-nip" colSpan={2}>Total</td>
                     <td className="rg-awal" /><td />
                     {KOLOM_PENERIMAAN.map((i) => <td key={i} className={`rg-n${i === 4 ? ' rg-awal' : ''}`}>{uang(rekap.gran[i]) ?? kosong}</td>)}
-                    {KOLOM_POTONGAN.map((i) => <td key={i} className={`rg-n rg-pot${i === 11 ? ' rg-awal' : ''}`}>{uang(rekap.gran[i]) ?? kosong}</td>)}
+                    {KOLOM_POTONGAN.map((i) => <td key={i} className={`rg-n rg-pot${i === 10 ? ' rg-awal' : ''}`}>{uang(rekap.gran[i]) ?? kosong}</td>)}
                     <td className="rg-n rg-awal">{rp(rekap.grand.penerimaan)}</td>
                     <td className="rg-n rg-pot">{uang(rekap.grand.potongan) ?? kosong}</td>
                     <td className="rg-n rg-bersih">{rp(rekap.grand.bersih)}</td>
@@ -171,11 +171,11 @@ export default async function HalamanDetailPeriode({ params }: { params: Promise
         </section>
         <p className="ab-footnote">
           <span className="rg-lebih">Angka merah</span> di kolom Abs = libur melebihi jatah (dipotong gaji). Ikon <span className="rg-info">i</span> = ada catatan atau libur lebih; arahkan kursor ke nama untuk melihat cara hitungnya. – = 0.
-          Penerimaan = gaji pokok + lembur + premi hadir + uang makan + tunj. prestasi + bonus + komisi. Potongan = pot. lain + kasbon + pot. absen (telat, tidak hadir/libur lebih) + pinjaman (Pot 4) + Pot 5. Bersih = penerimaan − potongan.
+          Penerimaan = gaji pokok + tunj. profesi + tunj. loyalitas + uang makan + lembur + bonus. Potongan = kasbon + pot. telat + pot. tidak masuk (libur lebih / tidak hadir) + pot. lain. Bersih = penerimaan − potongan.
           Upah per jam = upah harian ÷ jam kerja per hari. Lembur = jam lembur × upah per jam (atau upah lembur khusus).
           Karyawan bulanan: libur melebihi jatah × upah harian (gaji pokok ÷ hari per bulan), jatah yang tidak terpakai hangus.
           Potongan telat = total telat sebulan (dibulatkan ke bawah, di bawah batas tidak dipotong) × upah per jam, atau nominal per kali telat sesuai Pengaturan gaji.
-          Komponen tetap (gaji pokok, uang makan, tunjangan, premi, upah lembur per jam) diatur di menu Karyawan; aturan potongan di Pengaturan gaji.
+          Tunjangan profesi, bonus, kasbon, dan potongan lain diisi per periode lewat tombol Ubah. Gaji pokok, tunjangan loyalitas, dan upah lembur per jam diatur di menu Karyawan; uang makan dan aturan potongan di Pengaturan gaji.
         </p>
       </div>
     </>

@@ -31,11 +31,6 @@ body.ab { display: block; background: #e9e7e2; color: #111; font: 12px/1.3 "Time
 .cetak .ttd { text-align: center; font-weight: 700; }
 .cetak .ttd .kota { margin-bottom: 22px; }
 .cetak .catatan { max-width: 110mm; font-size: 11px; color: var(--muted); }
-/* slip dengan baris "Pot. libur lebih" / "Pot 5": jarak dirapatkan supaya tetap 2 slip per A4 */
-.cetak .slip.padat table.r .h td { padding-top: 2px; }
-.cetak .slip.padat .kaki { padding-top: 3px; }
-.cetak .slip.padat .ttd .kota { margin-bottom: 16px; }
-.cetak .slip.padat2 table.r td { line-height: 1.15; }
 
 /* Rekap gaji: A4 landscape */
 .cetak .lembar { background: #fff; width: 297mm; min-height: 210mm; margin: 12px auto; padding: 8mm; font: 9.5px/1.3 Arial, Helvetica, sans-serif; }

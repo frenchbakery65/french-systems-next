@@ -15,6 +15,20 @@
       "when": 1793210577368,
       "tag": "0001_mulai_pakai",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793284171569,
+      "tag": "0002_hapus_komponen_lama",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793284171931,
+      "tag": "0003_komponen_gaji_baru",
+      "breakpoints": true
     }
   ]
 }

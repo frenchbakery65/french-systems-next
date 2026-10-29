@@ -111,11 +111,10 @@ export function FormPengaturanGaji({ a }: { a: PengaturanGaji }) {
       </section>
 
       <section className="ab-card ab-form">
-        <h2>Premi hadir &amp; gaji pokok</h2>
-        <label className="ab-check"><input type="checkbox" name="premiHangusJikaAlpa" defaultChecked={a.premiHangusJikaAlpa} /><span>Premi hadir hangus jika ada tidak hadir tanpa keterangan<br /><small className="ab-muted">Untuk karyawan Kontrak/Magang. Bulanan selalu dapat premi penuh walau libur/tidak masuk; Harian tidak dapat premi.</small></span></label>
-        <label className="ab-field" style={{ maxWidth: 360 }}><span>Premi hangus jika telat lebih dari (kali)</span>
-          <input className="ab-input" name="premiMaksTelat" type="number" min={0} defaultValue={a.premiMaksTelat ?? ''} />{g('premiMaksTelat')}
-          <small>Kosongkan jika telat tidak memengaruhi premi.</small>
+        <h2>Uang makan &amp; gaji pokok</h2>
+        <label className="ab-field" style={{ maxWidth: 360 }}><span>Uang makan per bulan (Rp, semua karyawan)</span>
+          <Uang name="uangMakan" nilai={a.uangMakan} />
+          <small>Dipukul rata: setiap karyawan menerima nominal penuh setiap periode gaji, termasuk karyawan baru masuk / berhenti di tengah periode. Bila perlu dikurangi, isi lewat Potongan lain di slip.</small>
         </label>
         <label className="ab-check"><input type="checkbox" name="prorataGajiPokok" defaultChecked={a.prorataGajiPokok} /><span>Gaji pokok prorata untuk karyawan baru masuk / keluar di tengah periode<br /><small className="ab-muted">Bulanan: gaji pokok × hari aktif ÷ 30 (apa pun panjang periodenya). Harian/lainnya: menurut hari kerja.</small></span></label>
       </section>
