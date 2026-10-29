@@ -3,7 +3,7 @@ import { desc, eq, sql } from 'drizzle-orm';
 import { db, schema } from '@/db';
 import { TombolKonfirmasi } from '@/components/form-ui';
 import { Badge, Judul } from '@/components/ui';
-import { halamanPengelola } from '@/lib/auth/sesi';
+import { halamanGaji } from '@/lib/auth/sesi';
 import { rp } from '@/lib/format';
 import { pengaturanGaji } from '@/lib/pengaturan';
 import { formatDmy, hariIni } from '@/lib/tanggal';
@@ -13,7 +13,7 @@ import { FormPeriode } from './form';
 export const metadata = { title: 'Periode gaji' };
 
 export default async function HalamanPeriodeGaji() {
-  await halamanPengelola();
+  await halamanGaji();
   const p = schema.periodeGaji;
   const [daftar, aturan] = await Promise.all([
     db.select({ p, jumlah: sql<number>`count(${schema.slipGaji.id})::int`, bersih: sql<number>`coalesce(sum(${schema.slipGaji.gajiBersih}), 0)::bigint` })

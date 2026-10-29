@@ -5,9 +5,10 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { db, schema } from '@/db';
-import { wajibPengelola } from '@/lib/auth/sesi';
+import { bisaGaji, wajibPengelola } from '@/lib/auth/sesi';
 import { JENIS_PEKERJA } from '@/lib/absensi/tipe';
 import { hariIni, validTgl } from '@/lib/tanggal';
+import { KOLOM_GAJI } from './gaji';
 
 const uang = z.preprocess((v) => Number(String(v ?? '').replace(/\D/g, '') || 0), z.number().int().min(0).max(1_000_000_000_000));
 const teksOpsional = (maks: number) => z.preprocess((v) => (String(v ?? '').trim() || null), z.string().max(maks).nullable());
@@ -38,12 +39,19 @@ const Skema = z.object({
 export type StateForm = { pesan?: string; galat?: Record<string, string> } | null;
 
 export async function simpanKaryawan(id: number | null, _: StateForm, form: FormData): Promise<StateForm> {
-  await wajibPengelola();
-  const hasil = Skema.safeParse({
+  const u = await wajibPengelola();
+  const masukan: Record<string, unknown> = {
     ...Object.fromEntries(form),
     hariLiburMingguan: form.getAll('hariLiburMingguan'),
     aktif: form.get('aktif') === 'on',
-  });
+  };
+  // Admin absensi tidak boleh mengubah gaji: isian gaji dari form diabaikan, dipakai nilai lama (atau bawaan untuk karyawan baru)
+  if (!bisaGaji(u)) {
+    const [lama] = id ? await db.select().from(schema.karyawan).where(eq(schema.karyawan.id, id)) : [];
+    const bawaan = { jenisPekerja: 'Bulanan', jatahLibur: 2 } as Record<string, unknown>;
+    for (const c of KOLOM_GAJI) masukan[c] = lama ? lama[c] : (bawaan[c] ?? 0);
+  }
+  const hasil = Skema.safeParse(masukan);
   if (!hasil.success) {
     const galat: Record<string, string> = {};
     for (const i of hasil.error.issues) galat[String(i.path[0])] ??= i.message;

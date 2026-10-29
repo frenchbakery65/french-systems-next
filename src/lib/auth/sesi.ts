@@ -12,14 +12,14 @@ import { redirect } from 'next/navigation';
 import { cache } from 'react';
 import { db, schema } from '@/db';
 import type { User } from '@/db/schema';
+import { adalahAdmin, bisaGaji, bisaMengelola } from './peran';
+
+export { adalahAdmin, bisaGaji, bisaMengelola, PERAN, type Peran } from './peran';
 
 const NAMA_COOKIE = 'sesi';
 const MASA_SESI_HARI = 30;
 const BATAS_GAGAL = 5;
 const JENDELA_GAGAL_MENIT = 15;
-
-export const PERAN = { admin: 'Admin', hrd: 'HRD', viewer: 'Viewer (hanya melihat)' } as const;
-export type Peran = keyof typeof PERAN;
 
 export type Pengguna = Pick<User, 'id' | 'name' | 'username' | 'role'>;
 
@@ -31,8 +31,6 @@ export const rapikanUsername = (v: string) => v.replace(/\s+/g, '').toLowerCase(
 
 export const hashPassword = (pw: string) => bcrypt.hash(pw, 11);
 
-/** Admin dan HRD boleh mengubah data. */
-export const bisaMengelola = (u: Pick<User, 'role'> | null) => u?.role === 'admin' || u?.role === 'hrd';
 
 export type HasilLogin = { ok: true } | { ok: false; pesan: string };
 
@@ -89,21 +87,33 @@ export async function wajibLogin(): Promise<Pengguna> {
   return u;
 }
 
-/** Wajib Admin/HRD (untuk halaman & aksi yang mengubah data). */
+/** Wajib Admin/HRD/Admin absensi (untuk halaman & aksi yang mengubah data absensi). */
 export async function wajibPengelola(): Promise<Pengguna> {
   const u = await wajibLogin();
   if (!bisaMengelola(u)) throw new Error('Anda tidak punya akses untuk mengubah data ini.');
   return u;
 }
 
-/** Untuk halaman khusus Admin/HRD: pengguna lain dikembalikan ke Hari ini. */
+/** Untuk halaman pengelola absensi: pengguna lain dikembalikan ke Hari ini. */
 export async function halamanPengelola(): Promise<Pengguna> {
   const u = await wajibLogin();
   if (!bisaMengelola(u)) redirect('/');
   return u;
 }
 
-export const adalahAdmin = (u: Pick<User, 'role'> | null) => u?.role === 'admin';
+/** Wajib Admin/HRD (aksi penggajian). */
+export async function wajibGaji(): Promise<Pengguna> {
+  const u = await wajibLogin();
+  if (!bisaGaji(u)) throw new Error('Anda tidak punya akses ke data gaji.');
+  return u;
+}
+
+/** Untuk halaman penggajian: pengguna lain dikembalikan ke Hari ini. */
+export async function halamanGaji(): Promise<Pengguna> {
+  const u = await wajibLogin();
+  if (!bisaGaji(u)) redirect('/');
+  return u;
+}
 
 /** Wajib Admin (pengguna & pengaturan mesin). */
 export async function wajibAdmin(): Promise<Pengguna> {

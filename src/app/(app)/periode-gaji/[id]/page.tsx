@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import { db, schema } from '@/db';
 import { Judul } from '@/components/ui';
-import { adalahAdmin, halamanPengelola } from '@/lib/auth/sesi';
+import { adalahAdmin, halamanGaji } from '@/lib/auth/sesi';
 import { rp } from '@/lib/format';
 import { formatJam, slipPakaiJatah } from '@/lib/gaji/hitung';
 import { periodeAtau404, slipPeriode } from '@/lib/gaji/muat';
@@ -17,7 +17,7 @@ export const metadata = { title: 'Detail periode gaji' };
 const fmtWaktu = new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
 export default async function HalamanDetailPeriode({ params }: { params: Promise<{ id: string }> }) {
-  const u = await halamanPengelola();
+  const u = await halamanGaji();
   const awal = await periodeAtau404(Number((await params).id));
   if (!awal) notFound();
   await segarkan(awal); // periode draf selalu memakai absensi terbaru

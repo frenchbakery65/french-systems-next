@@ -4,13 +4,13 @@ import { and, eq, gte, lte, ne } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { db, schema } from '@/db';
-import { adalahAdmin, wajibPengelola } from '@/lib/auth/sesi';
+import { adalahAdmin, wajibGaji } from '@/lib/auth/sesi';
 import { formatDmy } from '@/lib/tanggal';
 import { tanggalAtauNull, teks, type StateForm } from '@/lib/formulir';
 import { hitungPeriode, PeriodeFinal, ubahManual } from '@/lib/gaji/periode-db';
 
 export async function buatPeriode(_: StateForm, form: FormData): Promise<StateForm> {
-  await wajibPengelola();
+  await wajibGaji();
   const nama = teks(form.get('nama'));
   const mulai = tanggalAtauNull(form.get('tanggalMulai'));
   const selesai = tanggalAtauNull(form.get('tanggalSelesai'));
@@ -34,7 +34,7 @@ export async function buatPeriode(_: StateForm, form: FormData): Promise<StateFo
 }
 
 export async function hapusPeriode(id: number) {
-  await wajibPengelola();
+  await wajibGaji();
   await db.delete(schema.periodeGaji).where(and(eq(schema.periodeGaji.id, id), ne(schema.periodeGaji.status, 'final')));
   revalidatePath('/periode-gaji');
 }
@@ -46,7 +46,7 @@ async function ambil(id: number) {
 }
 
 export async function hitungUlang(id: number): Promise<string> {
-  await wajibPengelola();
+  await wajibGaji();
   try {
     const n = await hitungPeriode(await ambil(id));
     revalidatePath(`/periode-gaji/${id}`);
@@ -57,7 +57,7 @@ export async function hitungUlang(id: number): Promise<string> {
 }
 
 export async function kunci(id: number) {
-  const u = await wajibPengelola();
+  const u = await wajibGaji();
   const p = await ambil(id);
   // hitung ulang dengan absensi terbaru lalu kunci dalam satu transaksi, supaya yang dikunci bukan angka lama
   if (p.status !== 'final') await hitungPeriode(p, { kunciOleh: u.id });
@@ -65,14 +65,14 @@ export async function kunci(id: number) {
 }
 
 export async function bukaKunci(id: number) {
-  const u = await wajibPengelola();
+  const u = await wajibGaji();
   if (!adalahAdmin(u)) throw new Error('Hanya admin yang boleh membuka kunci.');
   await db.update(schema.periodeGaji).set({ status: 'draf', dikunciOleh: null, dikunciPada: null }).where(eq(schema.periodeGaji.id, id));
   revalidatePath('/periode-gaji', 'layout');
 }
 
 export async function ubahSlip(slipId: number, periodeId: number, _: StateForm, form: FormData): Promise<StateForm> {
-  await wajibPengelola();
+  await wajibGaji();
   const uang = (n: string) => Number(teks(form.get(n)).replace(/\D/g, '') || 0);
   const jam = teks(form.get('jamLemburManual')).replace(',', '.');
   if (jam && (!Number.isFinite(Number(jam)) || Number(jam) < 0 || Number(jam) > 500)) return { galat: { jamLemburManual: 'Isi jam lembur 0–500, atau kosongkan.' } };

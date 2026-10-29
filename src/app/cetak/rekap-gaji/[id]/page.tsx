@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { halamanPengelola } from '@/lib/auth/sesi';
+import { halamanGaji } from '@/lib/auth/sesi';
 import { rp } from '@/lib/format';
 import { periodeAtau404, slipPeriode } from '@/lib/gaji/muat';
 import { segarkan } from '@/lib/gaji/periode-db';
@@ -20,7 +20,7 @@ function BarisTotal({ nilai, label, kelas }: { nilai: Total; label: Record<keyof
 }
 
 export default async function CetakRekapGaji({ params }: { params: Promise<{ id: string }> }) {
-  await halamanPengelola();
+  await halamanGaji();
   const awal = await periodeAtau404(Number((await params).id));
   if (!awal) notFound();
   await segarkan(awal);

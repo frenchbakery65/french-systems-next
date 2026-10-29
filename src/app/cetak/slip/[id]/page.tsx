@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { halamanPengelola } from '@/lib/auth/sesi';
+import { halamanGaji } from '@/lib/auth/sesi';
 import { durasi, rp } from '@/lib/format';
 import { formatJam, jamLembur, keteranganTelat, keteranganTidakMasuk, slipPakaiJatah } from '@/lib/gaji/hitung';
 import { periodeAtau404, slipPeriode } from '@/lib/gaji/muat';
@@ -10,7 +10,7 @@ import { TombolCetak } from '../../tombol';
 
 
 export default async function CetakSlip({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ slip?: string }> }) {
-  await halamanPengelola();
+  await halamanGaji();
   const awal = await periodeAtau404(Number((await params).id));
   if (!awal) notFound();
   await segarkan(awal);

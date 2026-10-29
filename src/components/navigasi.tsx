@@ -7,15 +7,16 @@ import {
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
+import { adalahAdmin, bisaGaji, bisaMengelola } from '@/lib/auth/peran';
 
-type Akses = 'semua' | 'kelola' | 'admin';
+type Akses = 'semua' | 'kelola' | 'gaji' | 'admin';
 const MENU: { grup?: string; href: string; label: string; ikon: LucideIcon; akses?: Akses }[] = [
   { href: '/', label: 'Hari ini', ikon: House },
   { href: '/jadwal-shift', label: 'Jadwal shift', ikon: CalendarDays },
   { href: '/rekap', label: 'Rekap periode', ikon: ChartColumn },
   { href: '/impor', label: 'Import file', ikon: FileUp, akses: 'kelola' },
-  { grup: 'Penggajian', href: '/periode-gaji', label: 'Periode gaji', ikon: Wallet, akses: 'kelola' },
-  { grup: 'Penggajian', href: '/pengaturan-gaji', label: 'Pengaturan gaji', ikon: SlidersHorizontal, akses: 'kelola' },
+  { grup: 'Penggajian', href: '/periode-gaji', label: 'Periode gaji', ikon: Wallet, akses: 'gaji' },
+  { grup: 'Penggajian', href: '/pengaturan-gaji', label: 'Pengaturan gaji', ikon: SlidersHorizontal, akses: 'gaji' },
   { grup: 'Data master', href: '/karyawan', label: 'Karyawan', ikon: Users },
   { grup: 'Data master', href: '/departemen', label: 'Departemen', ikon: Building2 },
   { grup: 'Data master', href: '/izin', label: 'Izin / sakit / cuti', ikon: CalendarOff },
@@ -32,7 +33,8 @@ export function Navigasi({ merek, peran, children }: { merek: React.ReactNode; p
   const path = usePathname();
   const [buka, setBuka] = useState(false);
   const aktif = (href: string) => (href === '/' ? path === '/' : path === href || path.startsWith(`${href}/`));
-  const boleh = (a: Akses = 'semua') => a === 'semua' || (a === 'kelola' ? peran === 'admin' || peran === 'hrd' : peran === 'admin');
+  const u = { role: peran };
+  const boleh = (a: Akses = 'semua') => ({ semua: true, kelola: bisaMengelola(u), gaji: bisaGaji(u), admin: adalahAdmin(u) })[a];
   let grupSebelum: string | undefined;
   return (
     <aside className={`app-side${buka ? ' terbuka' : ''}`}>

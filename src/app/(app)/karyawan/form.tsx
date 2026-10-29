@@ -16,6 +16,8 @@ interface Props {
   shift: { id: number; label: string; aktif: boolean }[];
   jamKerjaPerHari: number;
   pinAwal?: string;
+  /** Boleh melihat & mengubah bagian Gaji (Admin/HRD). Admin absensi tidak. */
+  gaji: boolean;
 }
 
 function Uang({ name, label, nilai, bantuan, galat }: { name: string; label: string; nilai?: number; bantuan?: string; galat?: string }) {
@@ -30,7 +32,7 @@ function Uang({ name, label, nilai, bantuan, galat }: { name: string; label: str
   );
 }
 
-export function FormKaryawan({ k, departemen, shift, jamKerjaPerHari, pinAwal }: Props) {
+export function FormKaryawan({ k, departemen, shift, jamKerjaPerHari, pinAwal, gaji }: Props) {
   const [state, kirim, menunggu] = useFormAksi<StateForm>(simpanKaryawan.bind(null, k?.id ?? null), null);
   const [jenis, setJenis] = useState(k?.jenisPekerja ?? 'Bulanan');
   const [upahHarian, setUpahHarian] = useState(k?.upahHarian ?? 0);
@@ -120,7 +122,7 @@ export function FormKaryawan({ k, departemen, shift, jamKerjaPerHari, pinAwal }:
           </div>
         </div>
 
-        <div className="ab-form-section">
+        {gaji && <div className="ab-form-section">
           <h3>Gaji</h3>
           <p className="ab-small ab-muted" style={{ margin: '0 0 10px' }}>Komponen tetap yang dipakai setiap periode gaji. Uang makan diatur sama rata di Pengaturan gaji. Tunjangan profesi, bonus, kasbon, dan potongan lain diisi per periode di halaman Periode gaji.</p>
           <div className="ab-form-grid">
@@ -146,7 +148,7 @@ export function FormKaryawan({ k, departemen, shift, jamKerjaPerHari, pinAwal }:
             <Uang name="tunjanganLoyalitas" label="Tunjangan loyalitas (per bulan)" nilai={k?.tunjanganLoyalitas} galat={g.tunjanganLoyalitas}
               bantuan="Sesuai lama bekerja. Diterima setiap periode gaji; ubah di sini bila naik." />
           </div>
-        </div>
+        </div>}
 
         <div className="ab-form-section">
           <label className="ab-field">

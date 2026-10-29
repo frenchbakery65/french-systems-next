@@ -28,7 +28,7 @@ export default async function HalamanPengguna() {
                   <tr key={u.id}>
                     <td className="ab-strong">{u.name}{u.id === saya.id && <span className="ab-tag"> Anda</span>}</td>
                     <td className="ab-mono">{u.username}</td>
-                    <td><Badge warna={u.role === 'admin' ? 'bad' : u.role === 'hrd' ? 'info' : 'muted'}>{PERAN[u.role as keyof typeof PERAN] ?? u.role}</Badge></td>
+                    <td><Badge warna={u.role === 'admin' ? 'bad' : u.role === 'hrd' ? 'info' : u.role === 'absensi' ? 'ok' : 'muted'}>{PERAN[u.role as keyof typeof PERAN] ?? u.role}</Badge></td>
                     <td>{waktuCatat(u.createdAt).split(' ').slice(0, 3).join(' ')}</td>
                     <td className="ab-num ab-small">
                       <Link href={`/pengguna/${u.id}`}>Ubah / ganti password</Link>

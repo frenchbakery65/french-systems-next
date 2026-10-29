@@ -4,7 +4,7 @@ import { db, schema } from '@/db';
 import { Penyegar } from '@/components/penyegar';
 import { PilihTanggal } from '@/components/pilih-tanggal';
 import { Avatar, Badge, Judul, kelasShift } from '@/components/ui';
-import { bisaMengelola, wajibLogin } from '@/lib/auth/sesi';
+import { bisaGaji, bisaMengelola, wajibLogin } from '@/lib/auth/sesi';
 import { muatPerhitungan, periodeUntuk, pinTidakDikenal } from '@/lib/absensi/muat';
 import type { HariAbsen } from '@/lib/absensi/perhitungan';
 import { durasi, formatMenit, jam, rp } from '@/lib/format';
@@ -51,7 +51,7 @@ export default async function HalamanHariIni({ searchParams }: { searchParams: P
       || a.karyawan.nama.localeCompare(b.karyawan.nama));
 
   const akumulasi = new Map(rekap.map((r) => [r.karyawan.id, {
-    kali: r.telat, menit: r.telatMenit, potongan: perkiraanPotonganTelat(r.karyawan, r.telat, r.telatMenit, aturan),
+    kali: r.telat, menit: r.telatMenit, potongan: bisaGaji(u) ? perkiraanPotonganTelat(r.karyawan, r.telat, r.telatMenit, aturan) : 0,
   }]));
 
   const peran = new Map<string, string>();
@@ -184,7 +184,7 @@ export default async function HalamanHariIni({ searchParams }: { searchParams: P
                           <td><Badge warna={h.warna()}>{h.label()}{h.telatMenit ? ` ${formatMenit(h.telatMenit)}` : ''}</Badge></td>
                           <td className={`ab-num ${ak?.kali ? 'ab-text-warn' : 'ab-muted'}`}>
                             {ak?.kali ? `${ak.kali}× · ${durasi(ak.menit)}` : '–'}
-                            <span className="ab-person-sub">{kelola && ak?.potongan ? `potongan ± Rp${rp(ak.potongan)}` : ''}</span>
+                            <span className="ab-person-sub">{bisaGaji(u) && ak?.potongan ? `potongan ± Rp${rp(ak.potongan)}` : ''}</span>
                           </td>
                           <td className="ab-small ab-muted">
                             {h.pulangCepatMenit > 0 && `Pulang cepat ${formatMenit(h.pulangCepatMenit)}. `}

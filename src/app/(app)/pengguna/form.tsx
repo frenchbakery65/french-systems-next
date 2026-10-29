@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { Galat, TombolSimpan, useFormAksi } from '@/components/form-ui';
 import type { StateForm } from '@/lib/formulir';
 import { simpanPengguna } from './aksi';
+import { PERAN } from '@/lib/auth/peran';
 
-const PERAN = { admin: 'Admin', hrd: 'HRD', viewer: 'Viewer (hanya melihat)' };
 
 export function FormPengguna({ u, diriSendiri }: { u: { id: number; name: string; username: string; role: string } | null; diriSendiri: boolean }) {
   const [state, kirim, menunggu] = useFormAksi<StateForm>(simpanPengguna.bind(null, u?.id ?? null), null);

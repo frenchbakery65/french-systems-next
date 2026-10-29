@@ -3,7 +3,7 @@
 import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { db, schema } from '@/db';
-import { wajibPengelola } from '@/lib/auth/sesi';
+import { wajibGaji } from '@/lib/auth/sesi';
 import { centang, sekarangIso, tanggalAtauNull, teks, type StateForm } from '@/lib/formulir';
 import { cekTanggalTerkunci } from '@/lib/gaji/periode-db';
 import { maxTgl, tambahHari } from '@/lib/tanggal';
@@ -12,7 +12,7 @@ import { pengaturanGaji } from '@/lib/pengaturan';
 const uang = (v: FormDataEntryValue | null) => Number(teks(v).replace(/\D/g, '') || 0);
 
 export async function simpanPengaturanGaji(_: StateForm, form: FormData): Promise<StateForm> {
-  await wajibPengelola();
+  await wajibGaji();
   const angka = (nama: string) => Number(teks(form.get(nama)).replace(',', '.'));
   const galat: Record<string, string> = {};
   const cek = (nama: string, min: number, maks: number, pesan: string, bulat = true) => {
