@@ -11,8 +11,8 @@ export function FormImpor() {
       <label className="ab-field">
         <span>File Excel (.xlsx) atau CSV</span>
         {/* Langsung diimport begitu file dipilih, tanpa perlu klik tombol */}
-        <input className="ab-input" type="file" name="file" accept=".xlsx,.xlsm,.csv,.txt" required disabled={menunggu}
-          style={{ height: 'auto', padding: 8 }} onChange={() => form.current?.requestSubmit()} />
+        <input className="ab-input ab-file" type="file" name="file" accept=".xlsx,.xlsm,.csv,.txt" required disabled={menunggu}
+          onChange={() => form.current?.requestSubmit()} />
         <small>File langsung diimport setelah dipilih. Data yang sudah ada (PIN dan waktu scan sama) otomatis dilewati, jadi aman mengimpor file yang sama lebih dari sekali. Maksimal 4 MB.</small>
       </label>
       {menunggu && <p className="ab-muted">Mengimpor…</p>}

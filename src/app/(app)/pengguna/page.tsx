@@ -1,3 +1,4 @@
+import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { asc } from 'drizzle-orm';
 import { db, schema } from '@/db';
@@ -16,7 +17,7 @@ export default async function HalamanPengguna() {
   return (
     <>
       <Judul judul="Pengguna" sub="Akun untuk masuk ke dashboard. Lupa password? Ganti dari sini (tidak ada reset lewat email)."
-        aksi={<Link className="ab-btn ab-btn-primary" href="/pengguna/baru">Tambah pengguna</Link>} />
+        aksi={<Link className="ab-btn ab-btn-primary" href="/pengguna/baru"><Plus aria-hidden />Tambah pengguna</Link>} />
       <div className="ab">
         <section className="ab-card">
           <div className="ab-table-wrap">

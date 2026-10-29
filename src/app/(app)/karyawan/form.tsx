@@ -87,7 +87,7 @@ export function FormKaryawan({ k, departemen, shift, jamKerjaPerHari, pinAwal }:
             </label>
             <fieldset className="ab-field" style={{ border: 0, padding: 0, margin: 0 }}>
               <span>Libur rutin</span>
-              <span style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 14px' }}>
+              <span className="ab-pilihan">
                 {HARI.map(([n, nama]) => (
                   <label key={n} className="ab-check">
                     <input type="checkbox" name="hariLiburMingguan" value={n} defaultChecked={libur.has(n)} disabled={jenis === 'Bulanan'} /> {nama}

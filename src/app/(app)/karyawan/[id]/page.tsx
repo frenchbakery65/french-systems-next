@@ -1,3 +1,4 @@
+import { Pencil, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { eq } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
@@ -36,9 +37,9 @@ export default async function HalamanDetailKaryawan({ params, searchParams }: {
         judul={k.k.nama}
         sub={[`PIN ${k.k.pin}`, k.departemen ?? 'Tanpa departemen', k.k.jabatan, k.k.aktif ? null : 'tidak aktif'].filter(Boolean).join(' · ')}
         aksi={kelola && <>
-          <Link className="ab-btn" href={`/izin/baru?karyawan=${id}`}>+ Izin / sakit / cuti</Link>
-          <Link className="ab-btn" href={`/koreksi/baru?karyawan=${id}`}>+ Koreksi</Link>
-          <Link className="ab-btn" href={`/karyawan/${id}/ubah`}>Ubah data</Link>
+          <Link className="ab-btn" href={`/izin/baru?karyawan=${id}`}><Plus aria-hidden />Izin / sakit / cuti</Link>
+          <Link className="ab-btn" href={`/koreksi/baru?karyawan=${id}`}><Plus aria-hidden />Koreksi</Link>
+          <Link className="ab-btn" href={`/karyawan/${id}/ubah`}><Pencil aria-hidden />Ubah data</Link>
         </>}
       />
       <div className="ab">

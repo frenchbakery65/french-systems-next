@@ -1,3 +1,4 @@
+import { Download } from 'lucide-react';
 import Link from 'next/link';
 import { asc } from 'drizzle-orm';
 import { db, schema } from '@/db';
@@ -40,7 +41,7 @@ export default async function HalamanRekap({ searchParams }: { searchParams: Pro
   return (
     <>
       <Judul
-        aksi={<a className="ab-btn" href={`/api/ekspor/rekap?${new URLSearchParams(Object.entries(q).filter(([, v]) => v) as [string, string][])}`}>Export Excel</a>}
+        aksi={<a className="ab-btn" href={`/api/ekspor/rekap?${new URLSearchParams(Object.entries(q).filter(([, v]) => v) as [string, string][])}`}><Download aria-hidden />Export Excel</a>}
         judul={`${formatTglBulanTahun(mulai)} – ${formatTglBulanTahun(selesai)}`}
         sub={`${selesai > kini ? `Dihitung sampai hari ini (${formatTglBulan(kini)}). ` : ''}Klik nama untuk melihat detail harian.`}
       />

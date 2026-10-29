@@ -1,3 +1,4 @@
+import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { desc, eq } from 'drizzle-orm';
 import { db, schema } from '@/db';
@@ -30,7 +31,7 @@ export default async function HalamanKoreksi({ searchParams }: { searchParams: P
   return (
     <>
       <Judul judul="Koreksi absen" sub="Menimpa jam masuk/pulang dari mesin (mis. lupa scan). Log asli tetap disimpan."
-        aksi={kelola && <Link className="ab-btn ab-btn-primary" href="/koreksi/baru">Tambah koreksi</Link>} />
+        aksi={kelola && <Link className="ab-btn ab-btn-primary" href="/koreksi/baru"><Plus aria-hidden />Tambah koreksi</Link>} />
       <div className="ab">
         <form className="ab-filters">
           <select className="ab-input" name="karyawan" defaultValue={q.karyawan ?? ''} aria-label="Karyawan">

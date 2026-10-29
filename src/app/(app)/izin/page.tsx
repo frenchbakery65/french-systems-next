@@ -1,3 +1,4 @@
+import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { and, desc, eq } from 'drizzle-orm';
 import { db, schema } from '@/db';
@@ -30,7 +31,7 @@ export default async function HalamanIzin({ searchParams }: { searchParams: Prom
   const href = (h: number) => `/izin?${new URLSearchParams({ ...(q.jenis ? { jenis: q.jenis } : {}), ...(q.karyawan ? { karyawan: q.karyawan } : {}), hal: String(h) })}`;
   return (
     <>
-      <Judul judul="Izin / sakit / cuti" aksi={kelola && <Link className="ab-btn ab-btn-primary" href="/izin/baru">Catat izin</Link>} />
+      <Judul judul="Izin / sakit / cuti" aksi={kelola && <Link className="ab-btn ab-btn-primary" href="/izin/baru"><Plus aria-hidden />Catat izin</Link>} />
       <div className="ab">
         <form className="ab-filters">
           <select className="ab-input" name="jenis" defaultValue={q.jenis ?? ''} aria-label="Jenis">

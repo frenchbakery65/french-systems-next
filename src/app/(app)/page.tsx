@@ -191,10 +191,10 @@ export default async function HalamanHariIni({ searchParams }: { searchParams: P
                             {h.tanpaScanMasuk && 'Tidak scan masuk. '}
                             {h.dikoreksi && <span className="ab-tag">dikoreksi</span>} {h.catatan}
                             {kelola && h.hariKerja && ['alpa', 'libur_jatah', 'libur_lebih'].includes(h.status) && <>
-                              {' '}<Link href={`/izin/baru?karyawan=${h.karyawan.id}&tanggal=${tgl}`}>+ izin</Link> ·{' '}
-                              <Link href={`/koreksi/baru?karyawan=${h.karyawan.id}&tanggal=${tgl}`}>+ koreksi</Link>
+                              {' '}<Link className="ab-nowrap" href={`/izin/baru?karyawan=${h.karyawan.id}&tanggal=${tgl}`}>+ izin</Link> ·{' '}
+                              <Link className="ab-nowrap" href={`/koreksi/baru?karyawan=${h.karyawan.id}&tanggal=${tgl}`}>+ koreksi</Link>
                             </>}
-                            {kelola && (h.lupaPulang || h.scanDiabaikan.length > 0) && !h.dikoreksi && !['alpa', 'libur_jatah', 'libur_lebih'].includes(h.status) && <> <Link href={`/koreksi/baru?karyawan=${h.karyawan.id}&tanggal=${tgl}`}>+ koreksi</Link></>}
+                            {kelola && (h.lupaPulang || h.scanDiabaikan.length > 0) && !h.dikoreksi && !['alpa', 'libur_jatah', 'libur_lebih'].includes(h.status) && <> <Link className="ab-nowrap" href={`/koreksi/baru?karyawan=${h.karyawan.id}&tanggal=${tgl}`}>+ koreksi</Link></>}
                           </td>
                         </tr>
                       </FragmentBaris>

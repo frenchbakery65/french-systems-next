@@ -1,3 +1,4 @@
+import { Download } from 'lucide-react';
 import { Judul } from '@/components/ui';
 import { halamanPengelola } from '@/lib/auth/sesi';
 import { FormImpor } from './form';
@@ -10,7 +11,7 @@ export default async function HalamanImpor() {
     <>
       <Judul judul="Import log dari file"
         sub="Cadangan jika mesin tidak bisa terhubung ke jaringan, misalnya data diambil lewat flashdisk lalu diexport dari software bawaan mesin."
-        aksi={<a className="ab-btn" href="/api/impor/template">Unduh template Excel</a>} />
+        aksi={<a className="ab-btn" href="/api/impor/template"><Download aria-hidden />Unduh template Excel</a>} />
       <div className="ab">
         <section className="ab-card"><FormImpor /></section>
         <section className="ab-card">

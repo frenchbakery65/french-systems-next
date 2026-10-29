@@ -30,7 +30,7 @@ export function SelJadwal({ karyawanId, nama, tanggal, judulTanggal, awal, catat
       {children}
       <Dialog buka={buka} tutup={() => setBuka(false)}>
         <form onSubmit={kirim} className="ab-form" onClick={(e) => e.stopPropagation()}>
-          <div><h2>Jadwal {nama}</h2><p className="ab-muted ab-small" style={{ margin: 0 }}>{judulTanggal}</p></div>
+          <div><h2>Jadwal {nama}</h2><p className="ab-dialog-sub">{judulTanggal}</p></div>
           <label className="ab-field"><span>Shift</span>
             <select className="ab-input" name="pilihan" defaultValue={awal}>
               {pilihan.map((p) => <option key={p.nilai} value={p.nilai}>{p.label}</option>)}
@@ -38,7 +38,7 @@ export function SelJadwal({ karyawanId, nama, tanggal, judulTanggal, awal, catat
           </label>
           <label className="ab-field"><span>Catatan</span><input className="ab-input" name="catatan" defaultValue={catatan} maxLength={255} placeholder="Contoh: tukar dengan Budi" /></label>
           {state && !state.ok && <PesanForm state={state} />}
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <div className="ab-dialog-aksi">
             <button type="button" className="ab-btn" onClick={() => setBuka(false)}>Batal</button>
             <TombolSimpan menunggu={menunggu} />
           </div>
@@ -72,7 +72,7 @@ export function AksiJadwal({ awal, judulMinggu, idKaryawan, karyawan, pilihan }:
             </select>
             <small>Tahan Ctrl / Cmd untuk memilih lebih dari satu.</small><Galat state={state} nama="karyawan" />
           </label>
-          <div className="ab-form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+          <div className="ab-form-grid ab-form-grid-2">
             <label className="ab-field"><span>Dari tanggal</span><input className="ab-input" type="date" name="dari" defaultValue={awal} required /><Galat state={state} nama="dari" /></label>
             <label className="ab-field"><span>Sampai tanggal</span><input className="ab-input" type="date" name="sampai" required /><Galat state={state} nama="sampai" /></label>
           </div>
@@ -85,7 +85,7 @@ export function AksiJadwal({ awal, judulMinggu, idKaryawan, karyawan, pilihan }:
           </label>
           <label className="ab-field"><span>Catatan</span><input className="ab-input" name="catatan" maxLength={255} /></label>
           {state && !state.ok && <PesanForm state={state} />}
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <div className="ab-dialog-aksi">
             <button type="button" className="ab-btn" onClick={() => setBuka(false)}>Batal</button>
             <TombolSimpan label="Terapkan" menunggu={menungguBanyak} />
           </div>

@@ -1,3 +1,4 @@
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { and, asc, eq, gte, inArray, isNull, lte } from 'drizzle-orm';
 import { db, schema } from '@/db';
@@ -70,9 +71,9 @@ export default async function HalamanJadwalShift({ searchParams }: { searchParam
               <Link href={url({ hari: '14' })} className={jumlahHari === 14 ? 'ab-on' : ''}>2 minggu</Link>
             </div>
             <div className="ab-daynav">
-              <Link className="ab-btn" href={url({ mulai: tambahHari(awal, -7) })} aria-label="Minggu sebelumnya">‹</Link>
+              <Link className="ab-btn ab-btn-ikon" href={url({ mulai: tambahHari(awal, -7) })} aria-label="Minggu sebelumnya"><ChevronLeft aria-hidden /></Link>
               <Link className="ab-btn" href={url({ mulai: null })}>Minggu ini</Link>
-              <Link className="ab-btn" href={url({ mulai: tambahHari(awal, 7) })} aria-label="Minggu berikutnya">›</Link>
+              <Link className="ab-btn ab-btn-ikon" href={url({ mulai: tambahHari(awal, 7) })} aria-label="Minggu berikutnya"><ChevronRight aria-hidden /></Link>
             </div>
           </form>
         </div>

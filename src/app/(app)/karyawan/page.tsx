@@ -1,3 +1,4 @@
+import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { and, asc, eq, ilike, or } from 'drizzle-orm';
 import { db, schema } from '@/db';
@@ -27,7 +28,7 @@ export default async function HalamanKaryawan({ searchParams }: { searchParams: 
 
   return (
     <>
-      <Judul judul="Karyawan" aksi={kelola && <Link className="ab-btn ab-btn-primary" href="/karyawan/baru">Tambah karyawan</Link>} />
+      <Judul judul="Karyawan" aksi={kelola && <Link className="ab-btn ab-btn-primary" href="/karyawan/baru"><Plus aria-hidden />Tambah karyawan</Link>} />
       <div className="ab">
         <form className="ab-filters">
           <input className="ab-input" name="q" defaultValue={q} placeholder="Cari nama, PIN, jabatan" aria-label="Cari" />
